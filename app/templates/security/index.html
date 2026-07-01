@@ -1,0 +1,26 @@
+{% extends "layouts/base.html" %}
+{% block title %}Security · Vib ID{% endblock %}
+{% block content %}
+{% set heading = 'Security' %}{% set subheading = 'Review central identity protection and launch sensitive actions through secure Vib ID flows.' %}{% include "components/page_header.html" %}
+<section class="metric-grid three">
+  <article class="metric-card"><span class="metric-icon"><svg><use href="{{ url_for('static', path='/icons/sprite.svg') }}#mail"></use></svg></span><div><small>Email verification</small><strong>{{ 'Verified' if email_verified else 'Action needed' }}</strong><span class="status {{ 'good' if email_verified else 'warning' }}">{{ 'Protected' if email_verified else 'Unverified' }}</span></div></article>
+  <article class="metric-card"><span class="metric-icon"><svg><use href="{{ url_for('static', path='/icons/sprite.svg') }}#shield"></use></svg></span><div><small>Two-factor authentication</small><strong>{{ 'Enabled' if central_status.two_factor_enabled else ('Not enabled' if central_status.two_factor_enabled is sameas false else 'Unavailable') }}</strong><span class="status {{ 'good' if central_status.two_factor_enabled else 'neutral' }}">Central account</span></div></article>
+  <article class="metric-card"><span class="metric-icon"><svg><use href="{{ url_for('static', path='/icons/sprite.svg') }}#check"></use></svg></span><div><small>Account state</small><strong>{{ 'Enabled' if central_status.enabled else ('Disabled' if central_status.enabled is sameas false else 'Unavailable') }}</strong><span class="status {{ 'good' if central_status.enabled else 'neutral' }}">Identity authority</span></div></article>
+</section>
+<div class="two-column">
+<section class="panel">
+  <div class="panel-heading"><div><p class="eyebrow">Secure actions</p><h2>Authentication settings</h2></div></div>
+  <div class="action-list">
+    <a href="{{ keycloak_account_url }}"><span><strong>Change password</strong><small>Update your password through the central Vib ID authentication service.</small></span><svg><use href="{{ url_for('static', path='/icons/sprite.svg') }}#arrow"></use></svg></a>
+    <a href="{{ keycloak_account_url }}"><span><strong>Manage two-factor authentication</strong><small>Add or remove authenticator methods without exposing secrets to this portal.</small></span><svg><use href="{{ url_for('static', path='/icons/sprite.svg') }}#arrow"></use></svg></a>
+    <a href="{{ keycloak_account_url }}"><span><strong>Manage recovery authentication</strong><small>Review recovery options in secure central account settings.</small></span><svg><use href="{{ url_for('static', path='/icons/sprite.svg') }}#arrow"></use></svg></a>
+    <a href="/sessions"><span><strong>Review active sessions</strong><small>Inspect portal sessions and approved central session status.</small></span><svg><use href="{{ url_for('static', path='/icons/sprite.svg') }}#arrow"></use></svg></a>
+  </div>
+</section>
+<section class="panel">
+  <div class="panel-heading"><div><p class="eyebrow">Recent security activity</p><h2>Latest events</h2></div><a href="/activity" class="text-link">View all</a></div>
+  {% if activities %}<ol class="timeline">{% for item in activities %}<li><span class="timeline-dot"></span><div><strong>{{ item.event_type|replace('_', ' ')|title }}</strong><small>{{ item.occurred_at|datetime(request.state.preferences.timezone if request.state.preferences else 'UTC') }}</small></div><span class="status {{ 'good' if item.result.value == 'success' else 'warning' }}">{{ item.result.value|title }}</span></li>{% endfor %}</ol>{% else %}<div class="empty-state small"><p>No recent activity is available.</p></div>{% endif %}
+</section>
+</div>
+{% if not central_status.available %}<div class="alert warning" role="status">Central security status is temporarily unavailable. Portal account functions remain accessible.</div>{% endif %}
+{% endblock %}

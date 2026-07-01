@@ -1,0 +1,53 @@
+services:
+  db:
+    image: postgres:17.5-bookworm
+    environment:
+      POSTGRES_DB: vib_id
+      POSTGRES_USER: vib_id
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+    volumes:
+      - vib_id_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vib_id -d vib_id"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [vib_id_private]
+    restart: unless-stopped
+
+  migrate:
+    build: .
+    command: ["alembic", "upgrade", "head"]
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [vib_id_private]
+    restart: "no"
+
+  app:
+    build: .
+    env_file: .env
+    environment:
+      FORWARDED_ALLOW_IPS: ${FORWARDED_ALLOW_IPS:-127.0.0.1}
+    expose:
+      - "8000"
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    networks: [vib_id_private]
+    restart: unless-stopped
+    stop_grace_period: 25s
+
+networks:
+  vib_id_private:
+    driver: bridge
+
+volumes:
+  vib_id_postgres:

@@ -1,0 +1,2 @@
+{% if saved %}<div class="alert success" role="status">Your changes were saved securely.</div>{% endif %}
+{% if errors %}<div class="alert error" role="alert"><strong>Please review the following:</strong><ul>{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul></div>{% endif %}

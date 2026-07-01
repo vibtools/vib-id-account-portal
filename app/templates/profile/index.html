@@ -1,0 +1,43 @@
+{% extends "layouts/base.html" %}
+{% block title %}Profile & Contacts · Vib ID{% endblock %}
+{% block content %}
+{% set heading = 'Profile & Contacts' %}{% set subheading = 'Manage extended profile details while your primary email remains secured by Vib ID.' %}{% set action_href = keycloak_account_url %}{% set action_label = 'Manage primary email' %}{% include "components/page_header.html" %}
+{% include "components/alerts.html" %}
+<div class="two-column wide-left">
+<section class="panel">
+  <div class="panel-heading"><div><p class="eyebrow">Personal details</p><h2>Profile information</h2></div></div>
+  <form method="post" action="/profile" class="form-grid">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="version" value="{{ profile.updated_at.isoformat() if profile else '' }}">
+    <label class="field full"><span>Display name</span><input name="display_name" maxlength="120" required autocomplete="name" value="{{ form_values.get('display_name', profile.display_name if profile else '') if form_values is defined else (profile.display_name if profile else '') }}"></label>
+    <label class="field"><span>Phone country code</span><input name="phone_country_code" maxlength="8" inputmode="tel" placeholder="+880" value="{{ profile.phone_country_code or '' if profile else '' }}"></label>
+    <label class="field"><span>Phone number</span><input name="phone_number" maxlength="32" inputmode="tel" autocomplete="tel" placeholder="+8801..." value="{{ profile.phone_number or '' if profile else '' }}"></label>
+    <label class="field"><span>Country code</span><input name="country_code" maxlength="2" autocomplete="country" placeholder="BD" value="{{ profile.country_code or '' if profile else '' }}"></label>
+    <label class="field"><span>Preferred language</span><input name="preferred_language" maxlength="16" placeholder="en" value="{{ profile.preferred_language if profile else 'en' }}"></label>
+    <label class="field full"><span>Timezone</span><select name="timezone">{% for timezone in timezones %}<option value="{{ timezone }}"{% if profile and profile.timezone == timezone %} selected{% endif %}>{{ timezone }}</option>{% endfor %}</select></label>
+    <label class="field"><span>Organization</span><input name="organization_name" maxlength="160" autocomplete="organization" value="{{ profile.organization_name or '' if profile else '' }}"></label>
+    <label class="field"><span>Job title</span><input name="job_title" maxlength="120" autocomplete="organization-title" value="{{ profile.job_title or '' if profile else '' }}"></label>
+    <div class="form-actions full"><button class="button primary" type="submit">Save profile</button></div>
+  </form>
+</section>
+<aside class="panel compact-panel">
+  <div class="panel-heading"><div><p class="eyebrow">Central identity</p><h2>Primary email</h2></div></div>
+  <dl class="detail-list"><div><dt>Email</dt><dd>{{ claims.get('email') or 'Not available' }}</dd></div><div><dt>Status</dt><dd><span class="status {{ 'good' if claims.get('email_verified') else 'warning' }}">{{ 'Verified' if claims.get('email_verified') else 'Unverified' }}</span></dd></div></dl>
+  <p class="muted">Primary email changes and verification are handled securely by the Vib ID authentication service.</p>
+  <a class="button secondary full-button" href="{{ keycloak_account_url }}">Open secure account settings</a>
+</aside>
+</div>
+<section class="panel">
+  <div class="panel-heading"><div><p class="eyebrow">Additional contacts</p><h2>Contact methods</h2></div><span class="status neutral">{{ contacts|length }} saved</span></div>
+  {% if contact_errors %}<div class="alert error" role="alert"><ul>{% for error in contact_errors %}<li>{{ error }}</li>{% endfor %}</ul></div>{% endif %}
+  <form method="post" action="/profile/contacts" class="inline-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label class="field"><span>Type</span><select name="contact_type"><option value="email">Email</option><option value="phone">Phone</option><option value="website">Website</option><option value="other">Other</option></select></label>
+    <label class="field"><span>Label</span><input name="label" maxlength="40" required placeholder="Work"></label>
+    <label class="field grow"><span>Value</span><input name="value" maxlength="255" required></label>
+    <label class="checkbox-field"><input type="checkbox" name="is_primary"><span>Primary</span></label>
+    <button class="button primary" type="submit">Add contact</button>
+  </form>
+  {% if contacts %}<div class="table-wrap"><table><thead><tr><th>Type</th><th>Label</th><th>Contact</th><th>Status</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>{% for contact in contacts %}<tr><td>{{ contact.contact_type.value|title }}</td><td>{{ contact.label }}</td><td>{{ contact.value }}</td><td>{% if contact.is_primary %}<span class="status good">Primary</span>{% endif %}{% if contact.is_verified %}<span class="status good">Verified</span>{% else %}<span class="status neutral">Not verified by portal</span>{% endif %}</td><td class="table-action"><form method="post" action="/profile/contacts/{{ contact.id }}/delete"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="button danger small" type="submit">Remove</button></form></td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="empty-state small"><h3>No additional contacts</h3><p>Add optional contact methods using the form above.</p></div>{% endif %}
+</section>
+{% endblock %}

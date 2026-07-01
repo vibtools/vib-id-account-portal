@@ -1,0 +1,3 @@
+{% extends "layouts/base.html" %}
+{% block title %}Sign-in issue · Vib ID{% endblock %}
+{% block public_content %}<section class="auth-card"><a class="brand centered" href="/"><span class="brand-mark">V</span><span><strong>Vib ID</strong><small>Account Center</small></span></a><div class="auth-icon warning"><svg><use href="{{ url_for('static', path='/icons/sprite.svg') }}#alert"></use></svg></div><h1>We could not complete sign-in</h1><p>The authentication response was invalid, expired, or cancelled. No account changes were made.</p><a class="button primary full-button" href="/login">Try secure sign-in again</a><small class="request-reference">Request ID: {{ request_id }}</small></section>{% endblock %}

@@ -1,0 +1,10 @@
+{% extends "layouts/base.html" %}
+{% block title %}Connected Services · Vib ID{% endblock %}
+{% block content %}
+{% set heading = 'Connected Services' %}{% set subheading = 'A read-only history of approved Vib-owned services that have authenticated this Vib ID.' %}{% include "components/page_header.html" %}
+<div class="info-banner"><svg><use href="{{ url_for('static', path='/icons/sprite.svg') }}#info"></use></svg><div><strong>Reference-only service history</strong><p>Services cannot be added, removed, disconnected, authorized, or configured from this page.</p></div></div>
+<section class="panel">
+  <div class="panel-heading"><div><p class="eyebrow">Approved services</p><h2>{{ connections|length }} connected service{{ '' if connections|length == 1 else 's' }}</h2></div></div>
+  {% if connections %}<div class="service-grid">{% for connection in connections %}<article class="service-card"><div class="service-logo">{{ connection.service.display_name[:1]|upper }}</div><div><div class="service-title"><h3>{{ connection.service.display_name }}</h3><span class="status {{ 'good' if connection.current_status.value == 'active' else 'neutral' }}">{{ connection.current_status.value|title }}</span></div><a href="https://{{ connection.service.domain }}" rel="noopener noreferrer">{{ connection.service.domain }}</a><p>{{ connection.service.description }}</p><dl><div><dt>First connected</dt><dd>{{ connection.first_connected_at|datetime(request.state.preferences.timezone if request.state.preferences else 'UTC') }}</dd></div><div><dt>Last used</dt><dd>{{ connection.last_authenticated_at|datetime(request.state.preferences.timezone if request.state.preferences else 'UTC') }}</dd></div></dl></div></article>{% endfor %}</div>{% else %}<div class="empty-state"><svg><use href="{{ url_for('static', path='/icons/sprite.svg') }}#grid"></use></svg><h3>No connected services yet</h3><p>Approved Vib services will appear automatically after you sign in to them with Vib ID.</p></div>{% endif %}
+</section>
+{% endblock %}

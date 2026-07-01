@@ -1,0 +1,54 @@
+services:
+  test-db:
+    image: postgres:17.5-bookworm
+    environment:
+      POSTGRES_DB: vib_id_test
+      POSTGRES_USER: vib_id_test
+      POSTGRES_PASSWORD: vib_id_test_password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vib_id_test -d vib_id_test"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    networks: [test_private]
+
+  tests:
+    build:
+      context: .
+      target: test
+    working_dir: /build
+    command: ["sh", "-c", "alembic upgrade head && pytest -m 'not e2e' --cov=app --cov-report=term-missing --cov-fail-under=90"]
+    environment:
+      APP_ENV: test
+      APP_NAME: Vib ID Test
+      APP_BASE_URL: http://testserver
+      APP_SECRET_KEY: test-app-secret-key-000000000000000000000000
+      TOKEN_ENCRYPTION_KEY: 0p4OwO-gAywWSiTtItuQQuGd0xb9Vj8jVDBV0DNwMvk=
+      DATABASE_URL: postgresql+asyncpg://vib_id_test:vib_id_test_password@test-db:5432/vib_id_test
+      TEST_DATABASE_URL: postgresql+asyncpg://vib_id_test:vib_id_test_password@test-db:5432/vib_id_test
+      OIDC_ISSUER_URL: https://auth.vib.tools/realms/vib
+      OIDC_CLIENT_ID: vib-id-portal
+      OIDC_CLIENT_SECRET: test-oidc-secret-00000000000000000000000
+      OIDC_REDIRECT_URI: http://testserver/auth/callback
+      OIDC_POST_LOGOUT_REDIRECT_URI: http://testserver/
+      OIDC_SCOPES: openid profile email
+      OIDC_EXPECTED_AUDIENCE: vib-id-portal
+      KEYCLOAK_MANAGEMENT_CLIENT_ID: vib-id-portal-management
+      KEYCLOAK_MANAGEMENT_CLIENT_SECRET: test-management-secret-00000000000000000
+      KEYCLOAK_MANAGEMENT_AUDIENCE: account
+      KEYCLOAK_ACCOUNT_URL: https://auth.vib.tools/realms/vib/account/
+      KEYCLOAK_ALLOWED_INTERNAL_CLIENTS: ygit-test-backend
+      SESSION_COOKIE_NAME: vib_id_test_session
+      SESSION_COOKIE_SECURE: "false"
+      TRUSTED_HOSTS: testserver,localhost
+      CSRF_SECRET: test-csrf-secret-00000000000000000000000
+      IP_PRIVACY_KEY: test-ip-privacy-key-0000000000000000000
+      RATE_LIMIT_ENABLED: "true"
+    depends_on:
+      test-db:
+        condition: service_healthy
+    networks: [test_private]
+
+networks:
+  test_private:
+    internal: true

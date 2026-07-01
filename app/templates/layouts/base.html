@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="{{ request.state.preferences.locale if request.state.preferences else 'en' }}" data-theme="{{ request.state.preferences.theme.value if request.state.preferences else 'system' }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="One secure Vib ID for Vib Tools and connected services.">
+  <title>{% block title %}Vib ID{% endblock %}</title>
+  <link rel="icon" href="{{ url_for('static', path='/images/favicon.svg') }}?v={{ app_version }}" type="image/svg+xml">
+  <link rel="stylesheet" href="{{ url_for('static', path='/css/app.css') }}?v={{ app_version }}">
+  <script src="{{ url_for('static', path='/js/app.js') }}?v={{ app_version }}" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  {% if auth %}
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Primary navigation">
+      <a class="brand" href="/" aria-label="Vib ID home">
+        <span class="brand-mark" aria-hidden="true">V</span>
+        <span><strong>Vib ID</strong><small>Account Center</small></span>
+      </a>
+      <nav class="nav-list">
+        {% set nav_items = [
+          ('overview', '/', 'dashboard', 'Overview'),
+          ('profile', '/profile', 'user', 'Profile & Contacts'),
+          ('security', '/security', 'shield', 'Security'),
+          ('sessions', '/sessions', 'devices', 'Sessions'),
+          ('services', '/services', 'grid', 'Connected Services'),
+          ('activity', '/activity', 'activity', 'Activity'),
+          ('preferences', '/preferences', 'settings', 'Preferences')
+        ] %}
+        {% for key, href, icon, label in nav_items %}
+        <a href="{{ href }}" class="nav-link{% if active_nav == key %} active{% endif %}"{% if active_nav == key %} aria-current="page"{% endif %}>
+          <svg aria-hidden="true"><use href="{{ url_for('static', path='/icons/sprite.svg') }}#{{ icon }}"></use></svg>
+          <span>{{ label }}</span>
+        </a>
+        {% endfor %}
+      </nav>
+      <form action="/logout" method="post" class="sidebar-logout">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button class="nav-link danger-link" type="submit">
+          <svg aria-hidden="true"><use href="{{ url_for('static', path='/icons/sprite.svg') }}#logout"></use></svg>
+          <span>Sign Out</span>
+        </button>
+      </form>
+      <div class="sidebar-user">
+        <span class="avatar" aria-hidden="true">{{ (claims.get('name') or claims.get('preferred_username') or 'V')[:1]|upper }}</span>
+        <span><strong>{{ claims.get('name') or claims.get('preferred_username') or 'Vib ID user' }}</strong><small>{{ claims.get('email') or 'Secure account' }}</small></span>
+      </div>
+    </aside>
+    <div class="content-shell">
+      <header class="mobile-header">
+        <a class="brand compact" href="/"><span class="brand-mark">V</span><strong>Vib ID</strong></a>
+        <button class="icon-button" type="button" data-nav-toggle aria-expanded="false" aria-controls="mobile-nav" aria-label="Open navigation">
+          <svg aria-hidden="true"><use href="{{ url_for('static', path='/icons/sprite.svg') }}#menu"></use></svg>
+        </button>
+      </header>
+      <nav id="mobile-nav" class="mobile-nav" aria-label="Mobile navigation" hidden>
+        {% for key, href, icon, label in nav_items %}
+        <a href="{{ href }}" class="nav-link{% if active_nav == key %} active{% endif %}">{{ label }}</a>
+        {% endfor %}
+        <form action="/logout" method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button class="nav-link danger-link" type="submit">Sign Out</button>
+        </form>
+      </nav>
+      <main id="main-content" class="main-content" tabindex="-1">
+        {% block content %}{% endblock %}
+      </main>
+      <footer class="app-footer">
+        <span>Vib ID · One secure identity for connected Vib services.</span>
+        <span>Request ID: <code>{{ request_id }}</code></span>
+      </footer>
+    </div>
+  </div>
+  {% else %}
+  <main id="main-content" class="public-shell" tabindex="-1">
+    {% block public_content %}{% endblock %}
+  </main>
+  {% endif %}
+</body>
+</html>

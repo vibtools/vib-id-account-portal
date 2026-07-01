@@ -1,0 +1,8 @@
+<header class="page-header">
+  <div>
+    <p class="eyebrow">Vib ID Account Center</p>
+    <h1>{{ heading }}</h1>
+    {% if subheading %}<p>{{ subheading }}</p>{% endif %}
+  </div>
+  {% if action_href and action_label %}<a class="button secondary" href="{{ action_href }}">{{ action_label }}</a>{% endif %}
+</header>

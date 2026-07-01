@@ -1,0 +1,25 @@
+{% extends "layouts/base.html" %}
+{% block title %}Overview · Vib ID{% endblock %}
+{% block content %}
+{% set heading = 'Welcome, ' ~ (profile.display_name if profile else (claims.get('name') or 'Vib ID user')) %}
+{% set subheading = 'Review your identity, security posture, sessions, and connected Vib services.' %}
+{% include "components/page_header.html" %}
+<section class="metric-grid" aria-label="Account summary">
+  <article class="metric-card"><span class="metric-icon"><svg><use href="{{ url_for('static', path='/icons/sprite.svg') }}#user"></use></svg></span><div><small>Profile completeness</small><strong>{{ completeness }}%</strong><progress class="progress" value="{{ completeness }}" max="100">{{ completeness }}%</progress></div></article>
+  <article class="metric-card"><span class="metric-icon"><svg><use href="{{ url_for('static', path='/icons/sprite.svg') }}#mail"></use></svg></span><div><small>Primary email</small><strong class="compact-value">{{ claims.get('email') or 'Not available' }}</strong><span class="status {{ 'good' if email_verified else 'warning' }}">{{ 'Verified' if email_verified else 'Unverified' }}</span></div></article>
+  <article class="metric-card"><span class="metric-icon"><svg><use href="{{ url_for('static', path='/icons/sprite.svg') }}#shield"></use></svg></span><div><small>Two-factor authentication</small><strong>{{ 'Enabled' if central_status.two_factor_enabled else ('Not enabled' if central_status.two_factor_enabled is sameas false else 'Unavailable') }}</strong><span class="status {{ 'good' if central_status.two_factor_enabled else 'neutral' }}">Central security</span></div></article>
+  <article class="metric-card"><span class="metric-icon"><svg><use href="{{ url_for('static', path='/icons/sprite.svg') }}#devices"></use></svg></span><div><small>Active portal sessions</small><strong>{{ local_session_count }}</strong><span class="muted">Central: {{ central_status.session_count if central_status.session_count is not none else 'Unavailable' }}</span></div></article>
+  <article class="metric-card"><span class="metric-icon"><svg><use href="{{ url_for('static', path='/icons/sprite.svg') }}#grid"></use></svg></span><div><small>Connected services</small><strong>{{ connected_count }}</strong><span class="muted">Read-only reference</span></div></article>
+  <article class="metric-card"><span class="metric-icon"><svg><use href="{{ url_for('static', path='/icons/sprite.svg') }}#activity"></use></svg></span><div><small>Last account activity</small><strong class="compact-value">{{ latest_activity.event_type|replace('_', ' ')|title if latest_activity else 'No activity yet' }}</strong><span class="muted">{{ latest_activity.occurred_at|datetime(preferences.timezone if preferences else 'UTC') if latest_activity else '' }}</span></div></article>
+</section>
+<div class="two-column">
+  <section class="panel">
+    <div class="panel-heading"><div><p class="eyebrow">Security recommendations</p><h2>Protect your Vib ID</h2></div><a href="/security" class="text-link">Security overview</a></div>
+    {% if recommendations %}<ul class="recommendation-list">{% for item in recommendations %}<li><svg><use href="{{ url_for('static', path='/icons/sprite.svg') }}#alert"></use></svg><span>{{ item }}</span></li>{% endfor %}</ul>{% else %}<div class="empty-state"><svg><use href="{{ url_for('static', path='/icons/sprite.svg') }}#check"></use></svg><h3>No immediate recommendations</h3><p>Your available Vib ID security checks look healthy.</p></div>{% endif %}
+  </section>
+  <section class="panel">
+    <div class="panel-heading"><div><p class="eyebrow">Quick access</p><h2>Manage your account</h2></div></div>
+    <div class="quick-grid"><a href="/profile"><svg><use href="{{ url_for('static', path='/icons/sprite.svg') }}#user"></use></svg><span>Profile & Contacts</span></a><a href="/security"><svg><use href="{{ url_for('static', path='/icons/sprite.svg') }}#shield"></use></svg><span>Security</span></a><a href="/sessions"><svg><use href="{{ url_for('static', path='/icons/sprite.svg') }}#devices"></use></svg><span>Sessions</span></a><a href="/services"><svg><use href="{{ url_for('static', path='/icons/sprite.svg') }}#grid"></use></svg><span>Connected Services</span></a></div>
+  </section>
+</div>
+{% endblock %}
