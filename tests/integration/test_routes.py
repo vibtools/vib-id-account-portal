@@ -257,3 +257,76 @@ def test_health_body_limit_validation_and_not_found(client) -> None:
     not_found = client.get("/does-not-exist")
     assert not_found.status_code == 404
     assert "request" in not_found.text.lower() or "not found" in not_found.text.lower()
+
+
+def test_quick_theme_updates_only_theme_and_rejects_external_next(client, login_user) -> None:
+    login = login_user(subject="quick-theme-user")
+
+    updated = client.post(
+        "/preferences/quick-theme",
+        data={
+            "csrf_token": login.csrf_token,
+            "theme": "dark",
+            "next": "/security",
+        },
+        follow_redirects=False,
+    )
+    assert updated.status_code == 303
+    assert updated.headers["location"] == "/security"
+    security = client.get("/security")
+    assert 'data-theme="dark"' in security.text
+
+    invalid = client.post(
+        "/preferences/quick-theme",
+        data={
+            "csrf_token": login.csrf_token,
+            "theme": "not-a-theme",
+            "next": "https://evil.example/",
+        },
+        follow_redirects=False,
+    )
+    assert invalid.status_code == 303
+    assert invalid.headers["location"] == "/"
+    overview = client.get("/")
+    assert 'data-theme="system"' in overview.text
+
+
+def test_preferences_invalid_locale_renders_validation_error(client, login_user) -> None:
+    login = login_user(subject="invalid-locale-user")
+    response = client.post(
+        "/preferences",
+        data={
+            "csrf_token": login.csrf_token,
+            "theme": "system",
+            "locale": "",
+            "timezone": "UTC",
+        },
+    )
+    assert response.status_code == 422
+    assert "Language setting is invalid" in response.text
+    saved_page = client.get("/preferences?saved=1")
+    assert saved_page.status_code == 200
+    assert "Your changes were saved securely" in saved_page.text
+
+
+def test_brand_assets_and_command_palette_contract(client, login_user) -> None:
+    login_user(subject="brand-contract-user")
+
+    for asset in (
+        "/static/brand/vibtools-horizontal-dark.png",
+        "/static/brand/vibtools-horizontal-light.png",
+        "/static/brand/vibtools-icon-dark.png",
+        "/static/brand/vibtools-icon-light.png",
+        "/static/brand/vibtools-favicon.png",
+    ):
+        response = client.get(asset)
+        assert response.status_code == 200, asset
+        assert response.headers["content-type"] == "image/png"
+        assert len(response.content) > 100
+
+    page = client.get("/")
+    assert page.status_code == 200
+    assert "data-command-palette" in page.text
+    assert "data-command-input" in page.text
+    assert "data-command-item" in page.text
+    assert "Ctrl" in page.text

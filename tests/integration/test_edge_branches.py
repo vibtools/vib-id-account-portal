@@ -280,3 +280,24 @@ def test_inactive_service_is_not_visible(client, login_user) -> None:
         },
     )
     assert response.status_code == 403
+
+
+def test_activity_repository_accepts_upper_date_bound(client, login_user) -> None:
+    from datetime import UTC, datetime, timedelta
+
+    from app.activity.repository import list_activity
+
+    login = login_user(subject="activity-bound-user")
+
+    async def exercise() -> None:
+        async with client.app.state.database.session_factory() as db:
+            records, total = await list_activity(
+                db,
+                subject=login.subject,
+                page=1,
+                date_to=datetime.now(UTC) + timedelta(minutes=1),
+            )
+            assert isinstance(records, list)
+            assert total >= 0
+
+    asyncio.run(exercise())

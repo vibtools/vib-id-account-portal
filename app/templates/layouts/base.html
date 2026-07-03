@@ -1,77 +1,189 @@
 <!doctype html>
-<html lang="{{ request.state.preferences.locale if request.state.preferences else 'en' }}" data-theme="{{ request.state.preferences.theme.value if request.state.preferences else 'system' }}">
+<html lang="{{ request.state.preferences.locale if request.state.preferences else 'en' }}" data-theme="{{ request.state.preferences.theme.value if request.state.preferences else 'system' }}" data-app-version="{{ app_version }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light dark">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
   <meta name="description" content="One secure Vib ID for Vib Tools and connected services.">
   <title>{% block title %}Vib ID{% endblock %}</title>
-  <link rel="icon" href="{{ url_for('static', path='/images/favicon.svg') }}?v={{ app_version }}" type="image/svg+xml">
+  <link rel="icon" href="{{ url_for('static', path='/brand/vibtools-icon-dark.png') }}?v={{ app_version }}" type="image/png">
   <link rel="stylesheet" href="{{ url_for('static', path='/css/app.css') }}?v={{ app_version }}">
   <script src="{{ url_for('static', path='/js/app.js') }}?v={{ app_version }}" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main-content">Skip to main content</a>
   {% if auth %}
+  {% set nav_items = [
+    ('overview', '/', 'dashboard', 'Overview', 'Account summary and recommendations'),
+    ('profile', '/profile', 'user', 'Profile & Contacts', 'Identity details and contact methods'),
+    ('security', '/security', 'shield', 'Security', 'Password, 2FA, and account protection'),
+    ('sessions', '/sessions', 'devices', 'Sessions', 'Active devices and sign-out controls'),
+    ('services', '/services', 'grid', 'Connected Services', 'Vib services using this identity'),
+    ('activity', '/activity', 'activity', 'Activity', 'Security and account history'),
+    ('preferences', '/preferences', 'settings', 'Preferences', 'Theme, language, and timezone')
+  ] %}
+  {% set active_labels = {
+    'overview': 'Overview',
+    'profile': 'Profile & Contacts',
+    'security': 'Security',
+    'sessions': 'Sessions',
+    'services': 'Connected Services',
+    'activity': 'Activity',
+    'preferences': 'Preferences'
+  } %}
+  {% set current_theme = request.state.preferences.theme.value if request.state.preferences else 'system' %}
+  {% set user_name = claims.get('name') or claims.get('preferred_username') or 'Vib ID user' %}
+  {% set user_email = claims.get('email') or 'Secure account' %}
+
   <div class="app-shell">
-    <aside class="sidebar" aria-label="Primary navigation">
-      <a class="brand" href="/" aria-label="Vib ID home">
-        <span class="brand-mark" aria-hidden="true">V</span>
-        <span><strong>Vib ID</strong><small>Account Center</small></span>
-      </a>
+    <header class="topbar">
+      <div class="topbar-leading">
+        <button class="topbar-icon-button nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="mobile-nav" aria-label="Open navigation">
+          <svg aria-hidden="true"><use href="{{ url_for('static', path='/icons/sprite.svg') }}#menu"></use></svg>
+        </button>
+        <a class="brand" href="/" aria-label="Vib Tools account portal home">
+          <span class="brand-image-wrap" aria-hidden="true">
+            <img class="brand-image brand-image-dark" src="{{ url_for('static', path='/brand/vibtools-horizontal-dark.png') }}?v={{ app_version }}" width="1050" height="315" alt="">
+            <img class="brand-image brand-image-light" src="{{ url_for('static', path='/brand/vibtools-horizontal-light.png') }}?v={{ app_version }}" width="1050" height="315" alt="">
+          </span>
+          <span class="brand-fallback"><strong>Vib Tools</strong><small>Vib ID</small></span>
+        </a>
+        <span class="topbar-divider" aria-hidden="true"></span>
+        <div class="topbar-context" aria-label="Current section">
+          <span>Vib ID</span>
+          <strong>{{ active_labels.get(active_nav, 'Account Portal') }}</strong>
+        </div>
+      </div>
+
+      <div class="topbar-actions">
+        <button class="command-trigger" type="button" data-command-open aria-haspopup="dialog">
+          <svg aria-hidden="true"><use href="{{ url_for('static', path='/icons/sprite.svg') }}#search"></use></svg>
+          <span>Search</span>
+          <kbd>Ctrl K</kbd>
+        </button>
+
+        <details class="menu-popover quick-settings" data-popover>
+          <summary class="topbar-icon-button" aria-label="Quick settings" title="Quick settings">
+            <svg aria-hidden="true"><use href="{{ url_for('static', path='/icons/sprite.svg') }}#settings"></use></svg>
+          </summary>
+          <div class="popover-panel popover-panel-right" role="group" aria-label="Quick settings">
+            <div class="popover-header">
+              <div><span class="popover-kicker">Quick settings</span><strong>Appearance</strong></div>
+              <span class="status neutral">{{ current_theme|title }}</span>
+            </div>
+            <form method="post" action="/preferences/quick-theme" class="theme-switcher" data-quick-theme-form>
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <input type="hidden" name="next" value="{{ request.url.path }}">
+              {% for value, label, icon in [('system','System','devices'),('light','Light','sun'),('dark','Dark','moon')] %}
+              <button type="submit" name="theme" value="{{ value }}" class="theme-choice{% if current_theme == value %} active{% endif %}" aria-pressed="{{ 'true' if current_theme == value else 'false' }}">
+                <svg aria-hidden="true"><use href="{{ url_for('static', path='/icons/sprite.svg') }}#{{ icon }}"></use></svg>
+                <span>{{ label }}</span>
+              </button>
+              {% endfor %}
+            </form>
+            <a class="popover-link" href="/preferences">
+              <span><strong>All preferences</strong><small>Language, timezone, and notifications</small></span>
+              <svg aria-hidden="true"><use href="{{ url_for('static', path='/icons/sprite.svg') }}#arrow"></use></svg>
+            </a>
+          </div>
+        </details>
+
+        <details class="menu-popover account-menu" data-popover>
+          <summary class="account-trigger" aria-label="Open account menu">
+            <span class="avatar" aria-hidden="true">{{ user_name[:1]|upper }}</span>
+            <span class="account-trigger-copy"><strong>{{ user_name }}</strong><small>{{ user_email }}</small></span>
+            <svg class="chevron" aria-hidden="true"><use href="{{ url_for('static', path='/icons/sprite.svg') }}#chevron-down"></use></svg>
+          </summary>
+          <div class="popover-panel popover-panel-right account-panel">
+            <div class="account-summary">
+              <span class="avatar large" aria-hidden="true">{{ user_name[:1]|upper }}</span>
+              <span><strong>{{ user_name }}</strong><small>{{ user_email }}</small></span>
+            </div>
+            <div class="popover-separator"></div>
+            <a class="popover-link compact" href="/profile"><span>Profile & Contacts</span></a>
+            <a class="popover-link compact" href="{{ keycloak_account_url }}"><span>Central security</span><svg aria-hidden="true"><use href="{{ url_for('static', path='/icons/sprite.svg') }}#external"></use></svg></a>
+            <div class="popover-separator"></div>
+            <form action="/logout" method="post">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <button class="popover-link compact danger-link" type="submit">
+                <span>Sign out</span>
+                <svg aria-hidden="true"><use href="{{ url_for('static', path='/icons/sprite.svg') }}#logout"></use></svg>
+              </button>
+            </form>
+          </div>
+        </details>
+      </div>
+    </header>
+
+    <aside id="mobile-nav" class="sidebar" aria-label="Primary navigation" data-sidebar hidden>
+      <div class="sidebar-mobile-account">
+        <span class="avatar" aria-hidden="true">{{ user_name[:1]|upper }}</span>
+        <span><strong>{{ user_name }}</strong><small>{{ user_email }}</small></span>
+      </div>
+      <div class="sidebar-section-label">Account</div>
       <nav class="nav-list">
-        {% set nav_items = [
-          ('overview', '/', 'dashboard', 'Overview'),
-          ('profile', '/profile', 'user', 'Profile & Contacts'),
-          ('security', '/security', 'shield', 'Security'),
-          ('sessions', '/sessions', 'devices', 'Sessions'),
-          ('services', '/services', 'grid', 'Connected Services'),
-          ('activity', '/activity', 'activity', 'Activity'),
-          ('preferences', '/preferences', 'settings', 'Preferences')
-        ] %}
-        {% for key, href, icon, label in nav_items %}
+        {% for key, href, icon, label, description in nav_items %}
         <a href="{{ href }}" class="nav-link{% if active_nav == key %} active{% endif %}"{% if active_nav == key %} aria-current="page"{% endif %}>
           <svg aria-hidden="true"><use href="{{ url_for('static', path='/icons/sprite.svg') }}#{{ icon }}"></use></svg>
-          <span>{{ label }}</span>
+          <span><strong>{{ label }}</strong><small>{{ description }}</small></span>
         </a>
         {% endfor %}
       </nav>
+      <div class="sidebar-spacer"></div>
+      <div class="sidebar-meta">
+        <span>Vib ID Account Portal</span>
+        <code>v{{ app_version }}</code>
+      </div>
       <form action="/logout" method="post" class="sidebar-logout">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <button class="nav-link danger-link" type="submit">
           <svg aria-hidden="true"><use href="{{ url_for('static', path='/icons/sprite.svg') }}#logout"></use></svg>
-          <span>Sign Out</span>
+          <span><strong>Sign out</strong><small>End this portal session</small></span>
         </button>
       </form>
-      <div class="sidebar-user">
-        <span class="avatar" aria-hidden="true">{{ (claims.get('name') or claims.get('preferred_username') or 'V')[:1]|upper }}</span>
-        <span><strong>{{ claims.get('name') or claims.get('preferred_username') or 'Vib ID user' }}</strong><small>{{ claims.get('email') or 'Secure account' }}</small></span>
-      </div>
     </aside>
+    <button class="sidebar-scrim" type="button" data-nav-close aria-label="Close navigation" hidden></button>
+
     <div class="content-shell">
-      <header class="mobile-header">
-        <a class="brand compact" href="/"><span class="brand-mark">V</span><strong>Vib ID</strong></a>
-        <button class="icon-button" type="button" data-nav-toggle aria-expanded="false" aria-controls="mobile-nav" aria-label="Open navigation">
-          <svg aria-hidden="true"><use href="{{ url_for('static', path='/icons/sprite.svg') }}#menu"></use></svg>
-        </button>
-      </header>
-      <nav id="mobile-nav" class="mobile-nav" aria-label="Mobile navigation" hidden>
-        {% for key, href, icon, label in nav_items %}
-        <a href="{{ href }}" class="nav-link{% if active_nav == key %} active{% endif %}">{{ label }}</a>
-        {% endfor %}
-        <form action="/logout" method="post">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-          <button class="nav-link danger-link" type="submit">Sign Out</button>
-        </form>
-      </nav>
       <main id="main-content" class="main-content" tabindex="-1">
         {% block content %}{% endblock %}
       </main>
       <footer class="app-footer">
         <span>Vib ID · One secure identity for connected Vib services.</span>
-        <span>Request ID: <code>{{ request_id }}</code></span>
+        <span>Request ID <code>{{ request_id }}</code></span>
       </footer>
     </div>
+  </div>
+
+  <div class="command-palette" data-command-palette hidden>
+    <button class="command-backdrop" type="button" data-command-close aria-label="Close search"></button>
+    <section class="command-dialog" role="dialog" aria-modal="true" aria-labelledby="command-title">
+      <div class="command-input-wrap">
+        <svg aria-hidden="true"><use href="{{ url_for('static', path='/icons/sprite.svg') }}#search"></use></svg>
+        <input id="command-title" type="search" data-command-input autocomplete="off" placeholder="Search pages and actions…" aria-label="Search pages and actions">
+        <kbd>Esc</kbd>
+      </div>
+      <div class="command-results" data-command-list>
+        <p class="command-group-label">Navigate</p>
+        {% for key, href, icon, label, description in nav_items %}
+        <a class="command-item" href="{{ href }}" data-command-item data-search="{{ label }} {{ description }} {{ key }}">
+          <span class="command-icon"><svg aria-hidden="true"><use href="{{ url_for('static', path='/icons/sprite.svg') }}#{{ icon }}"></use></svg></span>
+          <span><strong>{{ label }}</strong><small>{{ description }}</small></span>
+          <kbd>↵</kbd>
+        </a>
+        {% endfor %}
+        <p class="command-group-label">Secure actions</p>
+        <a class="command-item" href="{{ keycloak_account_url }}" data-command-item data-search="password two factor authentication recovery central security">
+          <span class="command-icon"><svg aria-hidden="true"><use href="{{ url_for('static', path='/icons/sprite.svg') }}#shield"></use></svg></span>
+          <span><strong>Central security</strong><small>Password, 2FA, email, and recovery settings</small></span>
+          <svg class="command-external" aria-hidden="true"><use href="{{ url_for('static', path='/icons/sprite.svg') }}#external"></use></svg>
+        </a>
+        <div class="command-empty" data-command-empty hidden>No matching pages or actions.</div>
+      </div>
+      <footer class="command-footer"><span><kbd>↑</kbd><kbd>↓</kbd> Navigate</span><span><kbd>Enter</kbd> Open</span></footer>
+    </section>
   </div>
   {% else %}
   <main id="main-content" class="public-shell" tabindex="-1">

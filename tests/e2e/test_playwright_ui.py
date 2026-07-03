@@ -60,6 +60,12 @@ def test_authenticated_account_flows_render_and_progressively_enhance(client, lo
             page.set_default_timeout(3000)
             _render(page, pages["/"])
             assert page.locator("h1").filter(has_text="Welcome, Raj Test").is_visible()
+            page.locator("[data-command-open]").click()
+            assert page.locator("[data-command-palette]").is_visible()
+            page.locator("[data-command-input]").fill("security")
+            assert page.locator("[data-command-item]:visible").count() >= 1
+            page.keyboard.press("Escape")
+            assert page.locator("[data-command-palette]").is_hidden()
             page.locator("[data-nav-toggle]").click()
             assert page.locator("#mobile-nav").is_visible()
             assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1")

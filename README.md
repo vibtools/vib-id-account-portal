@@ -1,6 +1,34 @@
 # Vib ID Account Portal
 
-`id.vib.tools` is the central user-facing account center for Vib Tools and approved Vib-owned services. Authentication remains exclusively at `auth.vib.tools` through OpenID Connect Authorization Code Flow with PKCE S256.
+Vib ID Account Portal is the central user-facing account center for Vib Tools and approved Vib-owned services. Authentication remains exclusively at `auth.vib.tools` through OpenID Connect Authorization Code Flow with PKCE S256.
+
+## Version 1.1.0
+
+The v1.1.0 release preserves the complete v1.0.1 security and account architecture while replacing the portal interface with the Vib Tools design system:
+
+- Flat, border-led surfaces with restrained elevation
+- Compact Inter-based typography and JetBrains Mono metadata
+- Dark, light, and system themes
+- High-information-density desktop layouts
+- Responsive navigation drawer and mobile-safe forms/tables
+- Keyboard-first command palette with `Ctrl/Cmd+K` or `/`
+- Quick appearance control that preserves all other preferences
+- Accessible focus indicators, semantic status colors, and progressive enhancement
+- No client framework or external runtime asset dependency
+
+## Brand assets
+
+The portal intentionally uses fixed local asset filenames so final approved exports can be replaced without changing templates or CSS:
+
+```text
+app/static/brand/vibtools-horizontal-dark.png
+app/static/brand/vibtools-horizontal-light.png
+app/static/brand/vibtools-icon-dark.png
+app/static/brand/vibtools-icon-light.png
+app/static/brand/vibtools-favicon.png
+```
+
+Replace those files before the public GitHub release while keeping the filenames and transparent PNG format unchanged. See `app/static/brand/README.md`.
 
 ## Security model
 
@@ -12,21 +40,24 @@
 - The immutable identity key is the validated OIDC `sub` claim.
 - Every browser state change is POST-protected with a session-bound CSRF token.
 - The internal service-touch endpoint accepts only allowlisted Keycloak service-account tokens with the required role.
+- The quick-theme endpoint uses an explicit internal redirect allowlist and cannot be used as an open redirect.
 
-## Runtime
+## Runtime and dependencies
 
 - Python 3.13
 - FastAPI and Uvicorn
 - Jinja2 server-rendered HTML
 - SQLAlchemy 2 async and PostgreSQL
 - Alembic
-- Authlib PKCE generation with standards-based JOSE/JWT validation through `joserfc`
+- Authlib PKCE generation and JOSE/JWT validation
 - HTTPX
-- Vanilla JavaScript and local CSS/SVG assets
+- Vanilla JavaScript and local CSS/SVG/PNG assets
+
+No new production dependency was added by the v1.1.0 redesign.
 
 ## Local development
 
-1. Create `.env` from `.env.example` and generate independent secrets:
+1. Copy `.env.example` to `.env` and generate independent secrets:
 
    ```bash
    python scripts/generate_secrets.py
@@ -51,15 +82,28 @@
    uv run python -m app.run
    ```
 
-Core pages work without JavaScript. JavaScript provides mobile navigation, theme preview, and filter auto-submit enhancement.
+Core pages and forms remain usable without JavaScript. JavaScript provides the responsive drawer, command palette, popovers, theme preview, and confirmation enhancement.
+
+## Keyboard workflow
+
+- `Ctrl/Cmd+K`: open command palette
+- `/`: open command palette when focus is not inside an input
+- `Arrow Up/Down`: move through visible command results
+- `Enter`: activate the selected result
+- `Escape`: close the command palette, popover, or mobile navigation
+- `Tab` / `Shift+Tab`: standard keyboard navigation throughout the portal
 
 ## Verification
+
+Run the complete offline audit suite:
 
 ```bash
 uv run bash scripts/run_audit.sh
 ```
 
-The default isolated suite uses deterministic mocked OIDC/JWKS services and SQLite for fast execution. Set `TEST_DATABASE_URL` to a PostgreSQL async URL, or run `docker compose -f compose.test.yaml up --build --abort-on-container-exit`, to execute migration-first repository and route tests against PostgreSQL.
+The deterministic suite uses mocked OIDC/JWKS services and SQLite for fast execution. Set `TEST_DATABASE_URL` to a PostgreSQL async URL, or run `docker compose -f compose.test.yaml up --build --abort-on-container-exit`, for migration-first PostgreSQL tests.
+
+The v1.1.0 audited release passed 52 tests with 90.12% branch-aware coverage, Ruff, mypy strict mode, Bandit, template parsing, JavaScript syntax, release integrity, and responsive browser checks.
 
 ## Operational commands
 
@@ -72,4 +116,4 @@ uv run vib-id cleanup
 
 ## Deployment
 
-Use the production `Dockerfile` and `docs/COOLIFY_DEPLOYMENT.md`. Database migrations are a distinct deployment step and are not run by every application replica.
+Use the production `Dockerfile` and `docs/COOLIFY_DEPLOYMENT.md`. Database migrations remain a distinct deployment step and are not run by every application replica. The v1.1.0 release contains no schema migration; deploy it over the existing v1.0.1 database after backup and standard health checks.

@@ -42,6 +42,61 @@ async def preferences_page(
     )
 
 
+@router.post("/quick-theme", response_class=HTMLResponse)
+async def quick_theme_update(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    auth: AuthenticatedSession = Depends(require_auth),
+) -> Response:
+    """Update only the visual theme from the global quick-settings menu."""
+
+    await validate_csrf(request, auth)
+    form = await request.form()
+    try:
+        theme = Theme(str(form.get("theme", "system")))
+    except ValueError:
+        theme = Theme.SYSTEM
+
+    preferences = await get_preferences(db, auth.subject)
+    locale = preferences.locale if preferences is not None else "en"
+    timezone_name = preferences.timezone if preferences is not None else "UTC"
+    security_notifications = (
+        preferences.security_email_notifications if preferences is not None else True
+    )
+    await update_preferences(
+        db,
+        subject=auth.subject,
+        theme=theme,
+        locale=locale,
+        timezone_name=timezone_name,
+        security_notifications=security_notifications,
+    )
+
+    ip_value, user_agent = request_security_context(request)
+    await record_activity(
+        db,
+        subject=auth.subject,
+        event_type="preferences_changed",
+        request_id=request.state.request_id,
+        ip_privacy_value=ip_value,
+        user_agent_summary=user_agent,
+        metadata={"field_names": ["theme"], "source": "quick-settings"},
+    )
+
+    requested_next = str(form.get("next", "/"))
+    allowed_paths = {
+        "/",
+        "/profile",
+        "/security",
+        "/sessions",
+        "/services",
+        "/activity",
+        "/preferences",
+    }
+    destination = requested_next if requested_next in allowed_paths else "/"
+    return RedirectResponse(destination, status_code=303)
+
+
 @router.post("", response_class=HTMLResponse)
 async def preferences_update(
     request: Request,

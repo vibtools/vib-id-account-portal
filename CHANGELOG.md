@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.1.0 — 2026-07-03
+
+- Rebuilt the authenticated portal shell around the Vib Tools Open Source Hub design system.
+- Added the official Vib Tools blue/cyan, dark/light, typography, border, spacing, and component tokens.
+- Replaced the heavy dashboard styling with flat, high-density cards, panels, tables, forms, and status indicators.
+- Added a keyboard-first command palette available with Ctrl/Cmd+K or `/`.
+- Added a global quick-theme control that preserves locale, timezone, and notification preferences.
+- Added a compact GitHub/Linear-inspired top bar, responsive navigation drawer, account menu, and mobile-safe layouts.
+- Added explicit dark/light brand asset slots with replacement documentation.
+- Preserved all existing profile, contact, security, session, service, activity, preference, OIDC, CSRF, and audit behavior.
+- Expanded UI regression coverage for navigation, command search, quick theme updates, and responsive rendering.
+
 ## 1.0.1 — 2026-07-01
 
 - Fixed Keycloak service-account token identification to validate `preferred_username` while retaining UUID `sub` claims.

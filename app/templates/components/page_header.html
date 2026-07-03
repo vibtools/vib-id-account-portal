@@ -1,8 +1,15 @@
 <header class="page-header">
-  <div>
-    <p class="eyebrow">Vib ID Account Center</p>
+  <div class="page-header-copy">
+    <p class="eyebrow">Vib ID / {{ heading }}</p>
     <h1>{{ heading }}</h1>
     {% if subheading %}<p>{{ subheading }}</p>{% endif %}
   </div>
-  {% if action_href and action_label %}<a class="button secondary" href="{{ action_href }}">{{ action_label }}</a>{% endif %}
+  {% if action_href and action_label %}
+  <div class="page-header-actions">
+    <a class="button secondary" href="{{ action_href }}">
+      {{ action_label }}
+      <svg aria-hidden="true"><use href="{{ url_for('static', path='/icons/sprite.svg') }}#external"></use></svg>
+    </a>
+  </div>
+  {% endif %}
 </header>
