@@ -1,0 +1,26 @@
+{% extends "layouts/base.html" %}
+{% block title %}Email Security · Vib ID{% endblock %}
+{% block content %}
+{% set heading = 'Email security' %}{% set subheading = 'Review verification status, resend verification, or request a central identity email change.' %}{% include "components/page_header.html" %}
+{% if message %}<div class="alert success" role="status">{{ message }}</div>{% endif %}
+{% if errors %}<div class="alert warning" role="alert">{{ errors|join(' ') }}</div>{% endif %}
+<div class="two-column">
+<section class="panel">
+  <div class="panel-heading"><div><p class="eyebrow">Current email</p><h2>{{ current_email or 'Not available' }}</h2></div><span class="status {{ 'good' if email_verified else 'warning' }}">{{ 'Verified' if email_verified else 'Unverified' }}</span></div>
+  <p class="muted">Verification is owned by Keycloak. The portal only requests verification and shows safe status.</p>
+  <form method="post" action="/security/email/resend-verification" class="form-grid compact">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button class="button secondary" type="submit">Resend verification email</button>
+  </form>
+</section>
+<section class="panel">
+  <div class="panel-heading"><div><p class="eyebrow">Change request</p><h2>Request new primary email</h2></div></div>
+  <form method="post" action="/security/email/change-request" class="form-grid">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label class="field"><span>New email</span><input name="new_email" type="email" autocomplete="email" maxlength="254" required value="{{ form_values.new_email if form_values is defined else '' }}"></label>
+    <p class="field-help">The new address will remain unverified until the user completes the central verification flow.</p>
+    <button class="button primary" type="submit">Request email change</button>
+  </form>
+</section>
+</div>
+{% endblock %}

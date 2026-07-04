@@ -1,7 +1,7 @@
 {% extends "layouts/base.html" %}
 {% block title %}Sessions · Vib ID{% endblock %}
 {% block content %}
-{% set heading = 'Sessions' %}{% set subheading = 'Review active portal sessions and terminate access you no longer recognize.' %}{% set action_href = keycloak_account_url %}{% set action_label = 'Central account sessions' %}{% include "components/page_header.html" %}
+{% set heading = 'Sessions' %}{% set subheading = 'Review active portal sessions and terminate access you no longer recognize.' %}{% set action_href = '/security/sessions' %}{% set action_label = 'Security sessions' %}{% include "components/page_header.html" %}
 {% if revoked %}<div class="alert success" role="status">Selected session access was revoked.</div>{% endif %}
 <section class="panel">
   <div class="panel-heading"><div><p class="eyebrow">Portal sessions</p><h2>Active devices</h2></div><form method="post" action="/sessions/revoke-all-others" data-confirm="Revoke every other portal session?"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="button secondary" type="submit">Revoke all other sessions</button></form></div>

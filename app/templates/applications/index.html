@@ -1,0 +1,9 @@
+{% extends "layouts/base.html" %}
+{% block title %}Applications · Vib ID{% endblock %}
+{% block content %}
+{% set heading = 'Applications' %}{% set subheading = 'Review Vib services and external apps that have used this identity.' %}{% include "components/page_header.html" %}
+<section class="panel">
+  <div class="panel-heading"><div><p class="eyebrow">Connected applications</p><h2>Service history</h2></div><span class="status neutral">Read-only</span></div>
+  {% if connections %}<div class="table-wrap"><table><thead><tr><th>Application</th><th>Domain</th><th>Status</th><th>Last login</th></tr></thead><tbody>{% for connection in connections %}<tr><td><strong>{{ connection.service.display_name }}</strong><small>{{ connection.service.description }}</small></td><td>{{ connection.service.domain }}</td><td><span class="status good">{{ connection.current_status.value|title }}</span></td><td>{{ connection.last_authenticated_at|datetime(request.state.preferences.timezone if request.state.preferences else 'UTC') }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="empty-state"><p>No connected application history is available yet.</p></div>{% endif %}
+</section>
+{% endblock %}

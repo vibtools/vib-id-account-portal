@@ -6,7 +6,7 @@ import asyncio
 import time
 from dataclasses import dataclass
 from typing import Any
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
 
 import httpx
 
@@ -124,7 +124,112 @@ class KeycloakManagementClient:
             self._record_success()
             return token
 
-    async def _request(self, method: str, path: str) -> Any:
+    async def get_user(self, subject: str) -> dict[str, Any]:
+        user = await self._request("GET", f"/users/{quote(subject, safe='')}")
+        return user if isinstance(user, dict) else {}
+
+    async def update_user_email(
+        self,
+        subject: str,
+        email: str,
+        *,
+        redirect_uri: str | None = None,
+    ) -> None:
+        user = await self.get_user(subject)
+        if not user:
+            raise KeycloakUnavailable("user not found")
+        payload = {
+            "id": user.get("id", subject),
+            "username": user.get("username"),
+            "firstName": user.get("firstName"),
+            "lastName": user.get("lastName"),
+            "email": email,
+            "enabled": user.get("enabled", True),
+            "emailVerified": False,
+            "attributes": user.get("attributes", {}),
+        }
+        await self._request("PUT", f"/users/{quote(subject, safe='')}", json=payload)
+        await self.send_verify_email(subject, redirect_uri=redirect_uri)
+
+    async def send_verify_email(self, subject: str, *, redirect_uri: str | None = None) -> None:
+        params: dict[str, str] = {"client_id": self.settings.OIDC_CLIENT_ID}
+        if redirect_uri:
+            params["redirect_uri"] = redirect_uri
+        query = urlencode(params)
+        await self._request(
+            "PUT",
+            f"/users/{quote(subject, safe='')}/send-verify-email?{query}",
+        )
+
+    async def execute_required_actions_email(
+        self,
+        subject: str,
+        *,
+        actions: list[str],
+        redirect_uri: str | None = None,
+        lifespan_seconds: int = 600,
+    ) -> None:
+        allowed_actions = {"UPDATE_PASSWORD", "CONFIGURE_TOTP", "VERIFY_EMAIL", "UPDATE_PROFILE"}
+        safe_actions = [action for action in actions if action in allowed_actions]
+        if not safe_actions:
+            raise KeycloakUnavailable("no supported required actions requested")
+        params: dict[str, str] = {
+            "client_id": self.settings.OIDC_CLIENT_ID,
+            "lifespan": str(max(60, min(lifespan_seconds, 3600))),
+        }
+        if redirect_uri:
+            params["redirect_uri"] = redirect_uri
+        query = urlencode(params)
+        await self._request(
+            "PUT",
+            f"/users/{quote(subject, safe='')}/execute-actions-email?{query}",
+            json=safe_actions,
+        )
+
+    async def list_user_sessions(self, subject: str) -> list[dict[str, Any]]:
+        sessions = await self._request("GET", f"/users/{quote(subject, safe='')}/sessions")
+        if not isinstance(sessions, list):
+            return []
+        return [item for item in sessions if isinstance(item, dict)]
+
+    async def list_user_credentials(self, subject: str) -> list[dict[str, Any]]:
+        credentials = await self._request("GET", f"/users/{quote(subject, safe='')}/credentials")
+        if not isinstance(credentials, list):
+            return []
+        return [item for item in credentials if isinstance(item, dict)]
+
+    async def remove_totp_credentials(self, subject: str) -> bool:
+        removed = False
+        for credential in await self.list_user_credentials(subject):
+            if credential.get("type") == "otp" and credential.get("id"):
+                await self._request(
+                    "DELETE",
+                    (
+                        f"/users/{quote(subject, safe='')}/credentials/"
+                        f"{quote(str(credential['id']), safe='')}"
+                    ),
+                )
+                removed = True
+        return removed
+
+    async def list_user_consents(self, subject: str) -> list[dict[str, Any]]:
+        consents = await self._request("GET", f"/users/{quote(subject, safe='')}/consents")
+        if not isinstance(consents, list):
+            return []
+        return [item for item in consents if isinstance(item, dict)]
+
+    async def revoke_user_consent(self, subject: str, client_id: str) -> bool:
+        consents = await self.list_user_consents(subject)
+        allowed = {str(item.get("clientId")) for item in consents if item.get("clientId")}
+        if client_id not in allowed:
+            return False
+        await self._request(
+            "DELETE",
+            f"/users/{quote(subject, safe='')}/consents/{quote(client_id, safe='')}",
+        )
+        return True
+
+    async def _request(self, method: str, path: str, *, json: object | None = None) -> Any:
         if time.monotonic() < self._circuit_open_until:
             raise KeycloakUnavailable("management circuit is open")
         token = await self._get_management_token()
@@ -134,6 +239,7 @@ class KeycloakManagementClient:
                 method,
                 url,
                 headers={"Authorization": f"Bearer {token}", "Accept": "application/json"},
+                json=json,
             )
             if response.status_code == 401:
                 self._access_token = None

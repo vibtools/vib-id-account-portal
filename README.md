@@ -2,6 +2,18 @@
 
 Vib ID Account Portal is the central user-facing account center for Vib Tools and approved Vib-owned services. Authentication remains exclusively at `auth.vib.tools` through OpenID Connect Authorization Code Flow with PKCE S256.
 
+## Version 1.2.0
+
+The v1.2.0 release uses v1.1.0 as the production baseline and adds the native Vib ID Security Module so users no longer need to use the Keycloak Account Console as their primary account-security UI:
+
+- Native `/security/password`, `/security/email`, `/security/2fa`, `/security/recovery-codes`, `/security/sessions`, and `/applications` pages
+- Password and 2FA setup actions triggered through Keycloak required-action email flows
+- Email verification resend and email-change request support through the Keycloak management client
+- Central session and consent-management adapter methods with bounded failure behavior
+- API endpoints for profile summary, security status, 2FA status, sessions, and applications
+- CSRF, rate limiting, audit logging, secure redirects, and no raw token exposure for every sensitive action
+- Account-menu, command-palette, profile, sessions, and navigation links moved away from the Keycloak Account Console
+
 ## Version 1.1.0
 
 The v1.1.0 release preserves the complete v1.0.1 security and account architecture while replacing the portal interface with the Vib Tools design system:
@@ -53,7 +65,7 @@ Replace those files before the public GitHub release while keeping the filenames
 - HTTPX
 - Vanilla JavaScript and local CSS/SVG/PNG assets
 
-No new production dependency was added by the v1.1.0 redesign.
+No new production dependency was added by the v1.2.0 security-module update.
 
 ## Local development
 
@@ -103,7 +115,7 @@ uv run bash scripts/run_audit.sh
 
 The deterministic suite uses mocked OIDC/JWKS services and SQLite for fast execution. Set `TEST_DATABASE_URL` to a PostgreSQL async URL, or run `docker compose -f compose.test.yaml up --build --abort-on-container-exit`, for migration-first PostgreSQL tests.
 
-The v1.1.0 audited release passed 52 tests with 90.12% branch-aware coverage, Ruff, mypy strict mode, Bandit, template parsing, JavaScript syntax, release integrity, and responsive browser checks.
+The v1.2.0 audited release passed 56 tests with 90.35% branch-aware coverage, Ruff, mypy strict mode, Bandit, template parsing, JavaScript syntax, release integrity, and responsive browser checks.
 
 ## Operational commands
 
@@ -116,4 +128,4 @@ uv run vib-id cleanup
 
 ## Deployment
 
-Use the production `Dockerfile` and `docs/COOLIFY_DEPLOYMENT.md`. Database migrations remain a distinct deployment step and are not run by every application replica. The v1.1.0 release contains no schema migration; deploy it over the existing v1.0.1 database after backup and standard health checks.
+Use the production `Dockerfile` and `docs/COOLIFY_DEPLOYMENT.md`. Database migrations remain a distinct deployment step and are not run by every application replica. The v1.2.0 release contains no schema migration; deploy it over the existing v1.1.0 database after backup and standard health checks.

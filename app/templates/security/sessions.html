@@ -1,0 +1,21 @@
+{% extends "layouts/base.html" %}
+{% block title %}Security Sessions · Vib ID{% endblock %}
+{% block content %}
+{% set heading = 'Security sessions' %}{% set subheading = 'Review local portal sessions and central Vib ID session visibility from one secure page.' %}{% include "components/page_header.html" %}
+{% if revoked %}<div class="alert success" role="status">Session action completed.</div>{% endif %}
+<section class="panel">
+  <div class="panel-heading"><div><p class="eyebrow">Portal sessions</p><h2>Active devices</h2></div><form method="post" action="/security/sessions/logout-all"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="button secondary" type="submit">Logout all other sessions</button></form></div>
+  <div class="session-list">
+  {% for session in sessions %}
+    <article class="session-card">
+      <div><strong>{{ session.device_label }}</strong><small>{{ session.user_agent_summary }}</small><small>Last seen {{ session.last_seen_at|datetime(request.state.preferences.timezone if request.state.preferences else 'UTC') }}</small></div>
+      {% if session.id == auth.model.id %}<span class="status good">Current</span>{% else %}<form method="post" action="/security/sessions/{{ session.id }}/revoke"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="button danger small" type="submit">Revoke</button></form>{% endif %}
+    </article>
+  {% else %}<div class="empty-state small"><p>No active portal sessions found.</p></div>{% endfor %}
+  </div>
+</section>
+<section class="panel">
+  <div class="panel-heading"><div><p class="eyebrow">Central identity</p><h2>Keycloak sessions</h2></div><span class="status {{ 'good' if central_status.available else 'neutral' }}">{{ 'Available' if central_status.available else 'Unavailable' }}</span></div>
+  {% if central_sessions %}<div class="table-wrap"><table><thead><tr><th>Session</th><th>IP</th><th>Clients</th></tr></thead><tbody>{% for item in central_sessions %}<tr><td><code>{{ item.id }}</code></td><td>{{ item.ip_address or 'Hidden' }}</td><td>{{ item.clients|join(', ') if item.clients else 'Not reported' }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="empty-state small"><p>Central session details are unavailable or not exposed by the management client.</p></div>{% endif %}
+</section>
+{% endblock %}

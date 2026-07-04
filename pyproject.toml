@@ -1,6 +1,6 @@
 [project]
 name = "vib-id-account-portal"
-version = "1.1.0"
+version = "1.2.0"
 description = "Vib ID central account portal for Vib Tools and connected services"
 readme = "README.md"
 requires-python = ">=3.13,<3.15"

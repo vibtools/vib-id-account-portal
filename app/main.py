@@ -13,6 +13,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from app import __version__
+from app.account_security.routes import router as account_security_router
 from app.accounts.routes import router as accounts_router
 from app.activity.routes import router as activity_router
 from app.auth.routes import router as auth_router
@@ -61,6 +62,7 @@ def create_app() -> FastAPI:
     application.include_router(services_router)
     application.include_router(activity_router)
     application.include_router(preferences_router)
+    application.include_router(account_security_router)
     application.include_router(internal_router)
 
     @application.exception_handler(HTTPException)
