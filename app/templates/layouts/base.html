@@ -19,8 +19,8 @@
     ('overview', '/', 'dashboard', 'Overview', 'Account summary and recommendations'),
     ('profile', '/profile', 'user', 'Profile & Contacts', 'Identity details and contact methods'),
     ('security', '/security', 'shield', 'Security', 'Password, 2FA, and account protection'),
-    ('sessions', '/sessions', 'devices', 'Sessions', 'Active devices and sign-out controls'),
-    ('services', '/services', 'grid', 'Connected Services', 'Vib services using this identity'),
+    ('sessions', '/security/sessions', 'devices', 'Sessions', 'Active devices and sign-out controls'),
+    ('applications', '/applications', 'grid', 'Applications', 'Connected apps and service history'),
     ('activity', '/activity', 'activity', 'Activity', 'Security and account history'),
     ('preferences', '/preferences', 'settings', 'Preferences', 'Theme, language, and timezone')
   ] %}
@@ -29,7 +29,7 @@
     'profile': 'Profile & Contacts',
     'security': 'Security',
     'sessions': 'Sessions',
-    'services': 'Connected Services',
+    'applications': 'Applications',
     'activity': 'Activity',
     'preferences': 'Preferences'
   } %}
@@ -103,7 +103,7 @@
             </div>
             <div class="popover-separator"></div>
             <a class="popover-link compact" href="/profile"><span>Profile & Contacts</span></a>
-            <a class="popover-link compact" href="{{ keycloak_account_url }}"><span>Central security</span><svg aria-hidden="true"><use href="{{ url_for('static', path='/icons/sprite.svg') }}#external"></use></svg></a>
+            <a class="popover-link compact" href="/security"><span>Security settings</span></a>
             <div class="popover-separator"></div>
             <form action="/logout" method="post">
               <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
@@ -175,10 +175,10 @@
         </a>
         {% endfor %}
         <p class="command-group-label">Secure actions</p>
-        <a class="command-item" href="{{ keycloak_account_url }}" data-command-item data-search="password two factor authentication recovery central security">
+        <a class="command-item" href="/security" data-command-item data-search="password two factor authentication recovery email sessions applications security">
           <span class="command-icon"><svg aria-hidden="true"><use href="{{ url_for('static', path='/icons/sprite.svg') }}#shield"></use></svg></span>
-          <span><strong>Central security</strong><small>Password, 2FA, email, and recovery settings</small></span>
-          <svg class="command-external" aria-hidden="true"><use href="{{ url_for('static', path='/icons/sprite.svg') }}#external"></use></svg>
+          <span><strong>Security settings</strong><small>Password, 2FA, email, sessions, and applications</small></span>
+          <kbd>↵</kbd>
         </a>
         <div class="command-empty" data-command-empty hidden>No matching pages or actions.</div>
       </div>

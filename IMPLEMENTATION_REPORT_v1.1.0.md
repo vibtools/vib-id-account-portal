@@ -1,7 +1,7 @@
 # Vib ID Account Portal v1.1.0 — Implementation Report
 
-**Release date:** 2026-07-03
-**Baseline:** v1.0.1 production source
+**Release date:** 2026-07-03  
+**Baseline:** v1.0.1 production source  
 **Scope:** Complete user-portal UX redesign with all existing identity and account behavior preserved
 
 ## 1. Project analysis

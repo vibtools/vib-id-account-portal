@@ -1,0 +1,22 @@
+{% extends "layouts/base.html" %}
+{% block title %}Two-Factor Authentication · Vib ID{% endblock %}
+{% block content %}
+{% set heading = 'Two-factor authentication' %}{% set subheading = 'Enable or manage authenticator-based protection through controlled Vib ID flows.' %}{% include "components/page_header.html" %}
+{% if message %}<div class="alert success" role="status">{{ message }}</div>{% endif %}
+<section class="metric-grid two">
+  <article class="metric-card"><span class="metric-icon"><svg><use href="{{ url_for('static', path='/icons/sprite.svg') }}#shield"></use></svg></span><div><small>Current status</small><strong>{{ 'Enabled' if central_status.two_factor_enabled else ('Not enabled' if central_status.two_factor_enabled is sameas false else 'Unavailable') }}</strong><span class="status {{ 'good' if central_status.two_factor_enabled else 'neutral' }}">Central account</span></div></article>
+  <article class="metric-card"><span class="metric-icon"><svg><use href="{{ url_for('static', path='/icons/sprite.svg') }}#check"></use></svg></span><div><small>Secret handling</small><strong>Central only</strong><span class="status good">No portal seed storage</span></div></article>
+</section>
+<div class="two-column">
+<section class="panel">
+  <div class="panel-heading"><div><p class="eyebrow">Enable</p><h2>Authenticator setup</h2></div></div>
+  <p class="muted">This sends a secure required-action email for Keycloak CONFIGURE_TOTP.</p>
+  <form method="post" action="/security/2fa/enable" class="form-grid compact"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="button primary" type="submit">Send 2FA setup email</button></form>
+</section>
+<section class="panel danger-panel">
+  <div class="panel-heading"><div><p class="eyebrow">Disable</p><h2>Remove authenticator credential</h2></div></div>
+  <p class="muted">Disabling 2FA is sensitive and audited. Keep this enabled for privileged accounts.</p>
+  <form method="post" action="/security/2fa/disable" class="form-grid compact"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="button danger" type="submit">Request 2FA disable</button></form>
+</section>
+</div>
+{% endblock %}

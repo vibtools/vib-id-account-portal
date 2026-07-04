@@ -1,0 +1,13 @@
+{% extends "layouts/base.html" %}
+{% block title %}Recovery Codes · Vib ID{% endblock %}
+{% block content %}
+{% set heading = 'Recovery codes' %}{% set subheading = 'Recovery-code support is capability-gated and will only be enabled when supported by the Keycloak realm flow.' %}{% include "components/page_header.html" %}
+{% if message %}<div class="alert success" role="status">{{ message }}</div>{% endif %}
+<section class="panel">
+  <div class="panel-heading"><div><p class="eyebrow">Current capability</p><h2>Not enabled in portal yet</h2></div><span class="status neutral">Safe disabled state</span></div>
+  <p class="muted">The portal does not generate fake recovery codes. This page remains a controlled placeholder until the Keycloak realm exposes a verified recovery-code provider or supported action flow.</p>
+</section>
+<section class="panel subtle-panel">
+  <div class="detail-grid"><div><span>Fake codes</span><strong>Blocked</strong></div><div><span>Secrets in browser</span><strong>Blocked</strong></div><div><span>Future support</span><strong>Keycloak-gated</strong></div></div>
+</section>
+{% endblock %}

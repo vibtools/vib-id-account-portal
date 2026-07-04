@@ -1,7 +1,7 @@
 {% extends "layouts/base.html" %}
 {% block title %}Profile & Contacts · Vib ID{% endblock %}
 {% block content %}
-{% set heading = 'Profile & Contacts' %}{% set subheading = 'Manage extended profile details while your primary email remains secured by Vib ID.' %}{% set action_href = keycloak_account_url %}{% set action_label = 'Manage primary email' %}{% include "components/page_header.html" %}
+{% set heading = 'Profile & Contacts' %}{% set subheading = 'Manage extended profile details while your primary email remains secured by Vib ID.' %}{% set action_href = '/security/email' %}{% set action_label = 'Manage primary email' %}{% include "components/page_header.html" %}
 {% include "components/alerts.html" %}
 <div class="two-column wide-left">
 <section class="panel">
@@ -24,7 +24,7 @@
   <div class="panel-heading"><div><p class="eyebrow">Central identity</p><h2>Primary email</h2></div></div>
   <dl class="detail-list"><div><dt>Email</dt><dd>{{ claims.get('email') or 'Not available' }}</dd></div><div><dt>Status</dt><dd><span class="status {{ 'good' if claims.get('email_verified') else 'warning' }}">{{ 'Verified' if claims.get('email_verified') else 'Unverified' }}</span></dd></div></dl>
   <p class="muted">Primary email changes and verification are handled securely by the Vib ID authentication service.</p>
-  <a class="button secondary full-button" href="{{ keycloak_account_url }}">Open secure account settings</a>
+  <a class="button secondary full-button" href="/security">Open secure account settings</a>
 </aside>
 </div>
 <section class="panel">

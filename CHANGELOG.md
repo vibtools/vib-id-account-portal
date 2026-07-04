@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.2.0 — 2026-07-04
+
+- Added the native Vib ID Security Module on top of the v1.1.0 portal baseline.
+- Added `/security/password`, `/security/email`, `/security/2fa`, `/security/recovery-codes`, `/security/sessions`, and `/applications` pages.
+- Replaced user-facing Keycloak Account Console links in the account menu, command palette, profile action, sessions action, and primary navigation.
+- Added Keycloak management-client support for required-action emails, verify-email requests, email updates, credential listing/removal, central sessions, and consent revocation.
+- Added JSON APIs for account profile summary, security status, 2FA status, sessions, and applications.
+- Added CSRF, rate-limit, audit-log, and no-token-exposure protections for new sensitive actions.
+- Kept Keycloak as the sole credential, password, email-verification, and TOTP authority.
+- Kept database schema unchanged; no Alembic migration is required for v1.2.0.
+- Expanded tests from 52 to 56 with 90.35% branch-aware coverage.
+
 ## 1.1.0 — 2026-07-03
 
 - Rebuilt the authenticated portal shell around the Vib Tools Open Source Hub design system.

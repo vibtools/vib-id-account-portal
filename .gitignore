@@ -15,4 +15,3 @@ test-results/
 *.zip
 *.sha256
 .DS_Store
-coverage.xml

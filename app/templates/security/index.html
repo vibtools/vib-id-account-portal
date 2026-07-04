@@ -1,7 +1,7 @@
 {% extends "layouts/base.html" %}
 {% block title %}Security · Vib ID{% endblock %}
 {% block content %}
-{% set heading = 'Security' %}{% set subheading = 'Review central identity protection and launch sensitive actions through secure Vib ID flows.' %}{% include "components/page_header.html" %}
+{% set heading = 'Security' %}{% set subheading = 'Manage password, email, two-factor authentication, sessions, and recovery from the native Vib ID portal.' %}{% include "components/page_header.html" %}
 <section class="metric-grid three">
   <article class="metric-card"><span class="metric-icon"><svg><use href="{{ url_for('static', path='/icons/sprite.svg') }}#mail"></use></svg></span><div><small>Email verification</small><strong>{{ 'Verified' if email_verified else 'Action needed' }}</strong><span class="status {{ 'good' if email_verified else 'warning' }}">{{ 'Protected' if email_verified else 'Unverified' }}</span></div></article>
   <article class="metric-card"><span class="metric-icon"><svg><use href="{{ url_for('static', path='/icons/sprite.svg') }}#shield"></use></svg></span><div><small>Two-factor authentication</small><strong>{{ 'Enabled' if central_status.two_factor_enabled else ('Not enabled' if central_status.two_factor_enabled is sameas false else 'Unavailable') }}</strong><span class="status {{ 'good' if central_status.two_factor_enabled else 'neutral' }}">Central account</span></div></article>
@@ -9,12 +9,14 @@
 </section>
 <div class="two-column">
 <section class="panel">
-  <div class="panel-heading"><div><p class="eyebrow">Secure actions</p><h2>Authentication settings</h2></div></div>
+  <div class="panel-heading"><div><p class="eyebrow">Native Security Module</p><h2>Account protection</h2></div><span class="status good">v1.2.0</span></div>
   <div class="action-list">
-    <a href="{{ keycloak_account_url }}"><span><strong>Change password</strong><small>Update your password through the central Vib ID authentication service.</small></span><svg><use href="{{ url_for('static', path='/icons/sprite.svg') }}#arrow"></use></svg></a>
-    <a href="{{ keycloak_account_url }}"><span><strong>Manage two-factor authentication</strong><small>Add or remove authenticator methods without exposing secrets to this portal.</small></span><svg><use href="{{ url_for('static', path='/icons/sprite.svg') }}#arrow"></use></svg></a>
-    <a href="{{ keycloak_account_url }}"><span><strong>Manage recovery authentication</strong><small>Review recovery options in secure central account settings.</small></span><svg><use href="{{ url_for('static', path='/icons/sprite.svg') }}#arrow"></use></svg></a>
-    <a href="/sessions"><span><strong>Review active sessions</strong><small>Inspect portal sessions and approved central session status.</small></span><svg><use href="{{ url_for('static', path='/icons/sprite.svg') }}#arrow"></use></svg></a>
+    <a href="/security/password"><span><strong>Change password</strong><small>Send a secure central password-change required action.</small></span><svg><use href="{{ url_for('static', path='/icons/sprite.svg') }}#arrow"></use></svg></a>
+    <a href="/security/email"><span><strong>Email verification and change</strong><small>Review verification, resend email, or request a new primary address.</small></span><svg><use href="{{ url_for('static', path='/icons/sprite.svg') }}#arrow"></use></svg></a>
+    <a href="/security/2fa"><span><strong>Two-factor authentication</strong><small>Enable TOTP via Keycloak required action or request protected removal.</small></span><svg><use href="{{ url_for('static', path='/icons/sprite.svg') }}#arrow"></use></svg></a>
+    <a href="/security/recovery-codes"><span><strong>Recovery codes</strong><small>Capability-gated recovery-code management with safe disabled state.</small></span><svg><use href="{{ url_for('static', path='/icons/sprite.svg') }}#arrow"></use></svg></a>
+    <a href="/security/sessions"><span><strong>Sessions</strong><small>Inspect portal sessions and central identity session visibility.</small></span><svg><use href="{{ url_for('static', path='/icons/sprite.svg') }}#arrow"></use></svg></a>
+    <a href="/applications"><span><strong>Applications</strong><small>Review connected services and app sign-in history.</small></span><svg><use href="{{ url_for('static', path='/icons/sprite.svg') }}#arrow"></use></svg></a>
   </div>
 </section>
 <section class="panel">

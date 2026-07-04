@@ -1,15 +1,15 @@
 # Vib ID Account Portal — Independent Forensic Audit Report
 
-**Version:** 1.1.0
-**Audit date:** 2026-07-03
-**Target:** `https://id.vib.tools`
+**Version:** 1.1.0  
+**Audit date:** 2026-07-03  
+**Target:** `https://id.vib.tools`  
 **Identity authority:** `https://auth.vib.tools/realms/vib`
 
 ## 1. Executive conclusion
 
 Version 1.1.0 is a controlled redesign of the audited v1.0.1 production source. It preserves the identity, authorization, persistence, and deployment architecture while replacing the user-facing portal shell and component system. No known functional or security regression was identified in the source, automated, browser, or visual audit.
 
-**Source release disposition:** PASS.
+**Source release disposition:** PASS.  
 **Target deployment disposition:** requires the normal image rebuild, health check, and live smoke test after deployment.
 
 ## 2. Architecture and backward compatibility

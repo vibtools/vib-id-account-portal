@@ -1,7 +1,7 @@
 # Vib ID Account Portal v1.1.0 — Test Report
 
-**Test date:** 2026-07-03
-**Python:** 3.13.5
+**Test date:** 2026-07-03  
+**Python:** 3.13.5  
 **Application version:** 1.1.0
 
 ## Automated verification
