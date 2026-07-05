@@ -16,6 +16,20 @@
     });
     window.requestAnimationFrame(updateFallback);
   });
+
+  const updateVisualViewportHeight = () => {
+    const height = window.visualViewport?.height || window.innerHeight;
+    if (Number.isFinite(height) && height > 0) {
+      document.documentElement.style.setProperty("--visual-viewport-height", `${height}px`);
+    }
+  };
+
+  updateVisualViewportHeight();
+  window.addEventListener("resize", updateVisualViewportHeight, { passive: true });
+  window.addEventListener("orientationchange", updateVisualViewportHeight, { passive: true });
+  window.visualViewport?.addEventListener("resize", updateVisualViewportHeight, { passive: true });
+  window.visualViewport?.addEventListener("scroll", updateVisualViewportHeight, { passive: true });
+
   const navToggle = document.querySelector("[data-nav-toggle]");
   const sidebar = document.querySelector("[data-sidebar]");
   const navClose = document.querySelector("[data-nav-close]");
