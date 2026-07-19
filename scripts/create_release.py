@@ -7,7 +7,7 @@ import hashlib
 import zipfile
 from pathlib import Path
 
-ARCHIVE_NAME = "Vib_ID_Account_Portal_v1.2.0_SECURITY_MODULE.zip"
+ARCHIVE_NAME = "Vib_ID_Account_Portal_v1.2.2_OPERATIONS_UI_PATCH.zip"
 ROOT_PREFIX = "vib-id-account-portal"
 EXCLUDED_DIRS = {
     ".git",
@@ -44,7 +44,7 @@ def main() -> None:
     checksum.unlink(missing_ok=True)
 
     files = sorted(path for path in root.rglob("*") if path.is_file() and include(path))
-    fixed_timestamp = (2026, 7, 4, 0, 0, 0)
+    fixed_timestamp = (2026, 7, 5, 0, 0, 0)
     with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as output:
         for path in files:
             relative = path.relative_to(root).as_posix()

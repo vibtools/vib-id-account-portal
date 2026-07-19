@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.2 — 2026-07-05
+
+- Added private operator-only operations monitoring script under `scripts/internal-ops/`.
+- Replaced the normal portal footer request-id display with VibTools copyright text.
+- Preserved request ID generation, server logging, and `X-Request-ID` response headers.
+- Added no user-facing monitoring page, route, or navigation item.
+- Requires no database migration and no Keycloak restart.
+
 ## 1.2.0 — 2026-07-04
 
 - Added the native Vib ID Security Module on top of the v1.1.0 portal baseline.
