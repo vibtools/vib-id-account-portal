@@ -1,9 +1,28 @@
 {% extends "layouts/base.html" %}
 {% block title %}Applications · Vib ID{% endblock %}
 {% block content %}
-{% set heading = 'Applications' %}{% set subheading = 'Review Vib services and external apps that have used this identity.' %}{% include "components/page_header.html" %}
+{% set heading = 'Applications' %}{% set subheading = 'Review available VibTools apps and recent services that have used this identity.' %}{% include "components/page_header.html" %}
+<section class="panel">
+  <div class="panel-heading"><div><p class="eyebrow">Available VibTools apps</p><h2>App catalog</h2></div><span class="status neutral">Read-only</span></div>
+  <div class="service-grid app-catalog-grid">
+    {% for app in available_apps %}
+    <article class="service-card app-catalog-card">
+      <div class="service-logo">{{ app.display_name[:1]|upper }}</div>
+      <div>
+        <div class="service-title"><h3>{{ app.display_name }}</h3><span class="status {{ 'good' if app.status == 'active' else 'neutral' }}">{{ 'Connected' if app.status == 'active' else 'Available' }}</span></div>
+        <a href="https://{{ app.domain }}" rel="noopener noreferrer" target="_blank">{{ app.domain }}</a>
+        <p>{{ app.description }}</p>
+        <dl>
+          <div><dt>Access status</dt><dd>{{ 'Recently used with Vib ID' if app.status == 'active' else 'Not used yet' }}</dd></div>
+          <div><dt>Last activity</dt><dd>{{ app.last_authenticated_at|datetime(request.state.preferences.timezone if request.state.preferences else 'UTC') if app.last_authenticated_at else 'Available after first app login' }}</dd></div>
+        </dl>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+</section>
 <section class="panel">
   <div class="panel-heading"><div><p class="eyebrow">Connected applications</p><h2>Service history</h2></div><span class="status neutral">Read-only</span></div>
-  {% if connections %}<div class="table-wrap"><table><thead><tr><th>Application</th><th>Domain</th><th>Status</th><th>Source</th><th>Last login</th></tr></thead><tbody>{% for app in connections %}<tr><td><strong>{{ app.display_name }}</strong><small>{{ app.description }}</small></td><td>{{ app.domain }}</td><td><span class="status good">{{ app.status|replace('_', ' ')|title }}</span></td><td><span class="status neutral">{{ 'Central session' if app.source == 'central_session' else 'Registry' }}</span></td><td>{{ app.last_authenticated_at|datetime(request.state.preferences.timezone if request.state.preferences else 'UTC') if app.last_authenticated_at else 'Available from next service touch' }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="empty-state"><p>No connected application history is available yet.</p><p class="muted">Connected apps appear after a service signs in with Vib ID or records a secure service touch event.</p></div>{% endif %}
+  {% if connections %}<div class="table-wrap"><table><thead><tr><th>Application</th><th>Domain</th><th>Status</th><th>Source</th><th>Last login</th></tr></thead><tbody>{% for app in connections %}<tr><td><strong>{{ app.display_name }}</strong><small>{{ app.description }}</small></td><td>{{ app.domain }}</td><td><span class="status good">{{ app.status|replace('_', ' ')|title }}</span></td><td><span class="status neutral">{{ 'Central session' if app.source == 'central_session' else ('Registry + central session' if app.source == 'registry_and_central_session' else 'Registry') }}</span></td><td>{{ app.last_authenticated_at|datetime(request.state.preferences.timezone if request.state.preferences else 'UTC') if app.last_authenticated_at else 'Available from next service touch' }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="empty-state"><p>No connected application history is available yet.</p><p class="muted">Available apps are listed above. Service history appears after an app signs in with Vib ID or records a secure service touch event.</p></div>{% endif %}
 </section>
 {% endblock %}

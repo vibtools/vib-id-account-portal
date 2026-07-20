@@ -1,11 +1,11 @@
 {% extends "layouts/base.html" %}
 {% block title %}Profile & Contacts · Vib ID{% endblock %}
 {% block content %}
-{% set heading = 'Profile & Contacts' %}{% set subheading = 'Manage your central Vib ID profile, avatar, social links, and contact methods for connected apps.' %}{% set action_href = '/api/account/profile/portable' %}{% set action_label = 'Preview portable profile API' %}{% include "components/page_header.html" %}
+{% set heading = 'Profile & Contacts' %}{% set subheading = 'Manage your central Vib ID profile, avatar, social links, and contact methods for connected apps.' %}{% include "components/page_header.html" %}
 {% include "components/alerts.html" %}
 <div class="two-column wide-left">
 <section class="panel">
-  <div class="panel-heading"><div><p class="eyebrow">Personal details</p><h2>Profile information</h2></div><span class="status neutral">Portable profile</span></div>
+  <div class="panel-heading"><div><p class="eyebrow">Personal details</p><h2>Profile information</h2></div><span class="status neutral">Central profile</span></div>
   <form method="post" action="/profile" class="form-grid">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <input type="hidden" name="version" value="{{ profile.updated_at.isoformat() if profile else '' }}">
@@ -21,7 +21,7 @@
   </form>
 </section>
 <aside class="panel compact-panel profile-card-panel">
-  <div class="panel-heading"><div><p class="eyebrow">Central identity</p><h2>Portable profile</h2></div></div>
+  <div class="panel-heading"><div><p class="eyebrow">Central identity</p><h2>VibTools profile</h2></div></div>
   <div class="profile-avatar-preview">
     {% if avatar_url %}<img src="{{ avatar_url }}" alt="{{ profile.display_name if profile else 'Profile' }} profile photo" loading="lazy">{% else %}<span class="avatar extra-large" aria-hidden="true">{{ (profile.display_name if profile else claims.get('name', 'V'))[:1]|upper }}</span>{% endif %}
     <div><strong>{{ profile.display_name if profile else claims.get('name', 'Vib ID user') }}</strong><small>{{ claims.get('email') or 'Email secured by Vib ID' }}</small></div>
@@ -32,7 +32,7 @@
     <button class="button primary full-button" type="submit">Upload photo</button>
   </form>
   {% if avatar_url %}<form method="post" action="/profile/avatar/delete"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="button danger full-button" type="submit">Remove photo</button></form>{% endif %}
-  <p class="muted">Connected apps can fetch this avatar through the Vib ID portable profile API after user login.</p>
+  <p class="muted">Your name and profile photo can appear across connected VibTools apps after login.</p>
   <dl class="detail-list"><div><dt>Email</dt><dd>{{ claims.get('email') or 'Not available' }}</dd></div><div><dt>Status</dt><dd><span class="status {{ 'good' if claims.get('email_verified') else 'warning' }}">{{ 'Verified' if claims.get('email_verified') else 'Unverified' }}</span></dd></div></dl>
 </aside>
 </div>

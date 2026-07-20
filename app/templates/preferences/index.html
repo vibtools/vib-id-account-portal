@@ -6,11 +6,19 @@
 <section class="panel narrow-panel">
   <form method="post" action="/preferences" class="form-grid" data-preferences-form>
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-    <fieldset class="full choice-group"><legend>Appearance</legend><p>Use your system setting by default, or choose a fixed theme.</p><div class="theme-options">{% for value, label in [('system','System'),('light','Light'),('dark','Dark')] %}<label><input type="radio" name="theme" value="{{ value }}"{% if preferences and preferences.theme.value == value %} checked{% endif %}><span><svg><use href="{{ url_for('static', path='/icons/sprite.svg') }}#{{ 'devices' if value == 'system' else ('sun' if value == 'light' else 'moon') }}"></use></svg>{{ label }}</span></label>{% endfor %}</div></fieldset>
+    <fieldset class="full choice-group"><legend>Appearance</legend><p>Dark mode is the default Vib ID experience. You can still choose light mode or system mode for this browser session.</p><div class="theme-options">{% for value, label in [('system','System'),('light','Light'),('dark','Dark')] %}<label><input type="radio" name="theme" value="{{ value }}"{% if (preferences and preferences.theme.value == value) or (not preferences and value == 'dark') %} checked{% endif %}><span><svg><use href="{{ url_for('static', path='/icons/sprite.svg') }}#{{ 'devices' if value == 'system' else ('sun' if value == 'light' else 'moon') }}"></use></svg>{{ label }}</span></label>{% endfor %}</div></fieldset>
     <label class="field"><span>Language</span><input name="locale" maxlength="16" value="{{ preferences.locale if preferences else 'en' }}" required></label>
     <label class="field"><span>Timezone</span><select name="timezone">{% for timezone in timezones %}<option value="{{ timezone }}"{% if preferences and preferences.timezone == timezone %} selected{% endif %}>{{ timezone }}</option>{% endfor %}</select></label>
     <label class="toggle-field full"><input type="checkbox" name="security_notifications"{% if not preferences or preferences.security_email_notifications %} checked{% endif %}><span class="toggle" aria-hidden="true"></span><span><strong>Security email notifications</strong><small>Receive important portal-related security notices when notification delivery is configured.</small></span></label>
     <div class="form-actions full"><button class="button primary" type="submit">Save preferences</button></div>
   </form>
+</section>
+<section class="panel narrow-panel">
+  <div class="panel-heading"><div><p class="eyebrow">Privacy & data</p><h2>Download account data</h2></div><span class="status neutral">Account export</span></div>
+  <p class="muted">Download a copy of your Vib ID profile, contact methods, social links, preferences, and connected application history. Passwords, tokens, session cookies, and security secrets are never included.</p>
+  <div class="data-export-actions">
+    <a class="button secondary" href="/preferences/account-data.txt" download>Download TXT</a>
+    <a class="button secondary" href="/preferences/account-data.csv" download>Download CSV</a>
+  </div>
 </section>
 {% endblock %}

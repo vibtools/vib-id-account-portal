@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.3.1 — 2026-07-20
+
+- Removed the user-facing portable profile API preview button from the Profile & Contacts page while preserving backend portable profile endpoints for connected apps.
+- Reworked Applications into a catalog plus service-history page so YGIT and YGIT Dev are visible before the first local service-touch event.
+- Hardened central session client detection for YGIT/YGIT Dev backend and display-name aliases.
+- Added authenticated TXT/CSV account data downloads under Preferences → Privacy & data with audit logging and rate limiting.
+- Changed the default portal theme to dark for new users and unauthenticated fallback rendering while preserving user-selected light/system preferences.
+- Requires no database migration and no Keycloak configuration change.
+
 ## 1.3.0 — 2026-07-20
 
 - Added Account Experience profile photo upload/remove with strict PNG/JPEG/WebP validation and size limits.

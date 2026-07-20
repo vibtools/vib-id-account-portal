@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 from datetime import UTC, datetime
 
 from sqlalchemy import select
@@ -17,26 +18,33 @@ DEFAULT_SERVICES: dict[str, dict[str, object]] = {
     "ygit": {
         "display_name": "YGIT",
         "domain": "ygit.net",
-        "description": "Open-source web platform connected to Vib ID.",
+        "description": "Git hosting, source control, and developer collaboration for VibTools.",
         "icon_reference": "grid",
         "active": True,
         "sort_order": 10,
+        "catalog_visible": True,
+        "open_url": "https://ygit.net",
     },
     "ygit-net": {
         "display_name": "YGIT",
         "domain": "ygit.net",
-        "description": "Open-source web platform connected to Vib ID.",
+        "description": "Git hosting, source control, and developer collaboration for VibTools.",
         "icon_reference": "grid",
         "active": True,
         "sort_order": 11,
+        "catalog_visible": False,
+        "canonical_service_key": "ygit",
+        "open_url": "https://ygit.net",
     },
     "ygit-dev": {
         "display_name": "YGIT Dev",
         "domain": "ygit.dev",
-        "description": "Template marketplace and developer community connected to Vib ID.",
+        "description": "Developer workspace, templates, and VibTools project tooling.",
         "icon_reference": "grid",
         "active": True,
         "sort_order": 20,
+        "catalog_visible": True,
+        "open_url": "https://ygit.dev",
     },
 }
 
@@ -163,3 +171,30 @@ async def ensure_default_service(db: AsyncSession, *, service_key: str) -> Servi
 
 def default_service_definition(service_key: str) -> dict[str, object] | None:
     return DEFAULT_SERVICES.get(service_key)
+
+
+def canonical_service_key(service_key: str) -> str:
+    """Return the product-facing service key for aliases and backend client IDs."""
+
+    definition = DEFAULT_SERVICES.get(service_key)
+    if definition is not None:
+        return str(definition.get("canonical_service_key") or service_key)
+    return service_key
+
+
+def catalog_service_definitions() -> dict[str, dict[str, object]]:
+    """Return first-class VibTools apps that should be visible before first use."""
+
+    catalog: dict[str, dict[str, object]] = {}
+    for service_key, definition in DEFAULT_SERVICES.items():
+        if not bool(definition.get("active", True)) or not bool(
+            definition.get("catalog_visible", True)
+        ):
+            continue
+        canonical_key = canonical_service_key(service_key)
+        if canonical_key in catalog:
+            continue
+        item = deepcopy(definition)
+        item["service_key"] = canonical_key
+        catalog[canonical_key] = item
+    return dict(sorted(catalog.items(), key=lambda pair: int(pair[1].get("sort_order", 0))))

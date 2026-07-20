@@ -61,3 +61,18 @@ Rules:
 - Cache profile responses briefly and refresh after login or profile update.
 
 This endpoint is separate from OIDC token claims so profile photo and profile details can update centrally without forcing every connected app to redesign its auth flow.
+
+
+## Application catalog behavior
+
+The user-facing Applications page includes a read-only VibTools app catalog. First-class apps such as YGIT and YGIT Dev are shown even before the account has a local service touch record. A separate service-history section shows actual registry or central-session activity when available.
+
+Central session fallback recognizes canonical frontend and backend client aliases such as `ygit`, `ygit-net`, `ygit-backend`, `ygit-net-backend`, `ygit-dev`, and `ygit-dev-backend`. Backends should still record a service touch after login so the account portal can persist first-connected and last-used timestamps.
+
+## User data export
+
+Users can download account data from Preferences → Privacy & data as TXT or CSV. The export is authenticated, rate-limited, and audit-logged. It includes account profile fields, preferences, contact methods, social links, and connected application history. It never includes passwords, access tokens, refresh tokens, session cookies, CSRF secrets, service-account secrets, or raw Keycloak credential material.
+
+## User interface boundaries
+
+Do not expose API endpoint URLs or service-token instructions in normal user profile screens. End users manage profile information and account data exports in the portal. Developers should use this document for backend-to-backend profile integration.

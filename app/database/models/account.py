@@ -77,7 +77,7 @@ class UserPreference(TimestampMixin, Base):
 
     subject: Mapped[str] = mapped_column(String(255), primary_key=True)
     theme: Mapped[Theme] = mapped_column(
-        Enum(Theme, name="theme", native_enum=False), nullable=False, default=Theme.SYSTEM
+        Enum(Theme, name="theme", native_enum=False), nullable=False, default=Theme.DARK
     )
     locale: Mapped[str] = mapped_column(String(16), nullable=False, default="en")
     timezone: Mapped[str] = mapped_column(String(64), nullable=False, default="UTC")

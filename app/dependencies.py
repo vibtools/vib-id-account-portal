@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.sessions import AuthenticatedSession
 from app.database.models.account import UserPreference, UserProfile
+from app.database.models.enums import Theme
 from app.security.identifiers import privacy_ip, sanitize_user_agent
 
 
@@ -61,7 +62,7 @@ async def optional_auth(
             theme=preference.theme,
         )
         if preference is not None
-        else None
+        else PreferenceSnapshot(locale="en", timezone="UTC", theme=Theme.DARK)
     )
     request.state.profile_avatar_key = profile.avatar_key if profile is not None else None
     return auth

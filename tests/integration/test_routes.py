@@ -288,7 +288,7 @@ def test_quick_theme_updates_only_theme_and_rejects_external_next(client, login_
     assert invalid.status_code == 303
     assert invalid.headers["location"] == "/"
     overview = client.get("/")
-    assert 'data-theme="system"' in overview.text
+    assert 'data-theme="dark"' in overview.text
 
 
 def test_preferences_invalid_locale_renders_validation_error(client, login_user) -> None:

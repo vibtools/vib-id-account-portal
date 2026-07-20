@@ -53,7 +53,12 @@ async def ensure_account_records(
         await db.execute(select(UserPreference).where(UserPreference.subject == subject))
     ).scalar_one_or_none()
     if preferences is None:
-        preferences = UserPreference(subject=subject, locale=locale[:16], timezone="UTC")
+        preferences = UserPreference(
+            subject=subject,
+            theme=Theme.DARK,
+            locale=locale[:16],
+            timezone="UTC",
+        )
         db.add(preferences)
     await db.flush()
     return profile, preferences
@@ -79,7 +84,7 @@ async def update_profile(
     if profile is None:
         raise LookupError("profile does not exist")
     current = as_utc(profile.updated_at)
-    supplied = payload.version.astimezone(UTC)
+    supplied = as_utc(payload.version)
     if current != supplied:
         raise ConcurrentProfileUpdate("profile changed in another request")
     for field in (
@@ -173,7 +178,7 @@ async def update_preferences(
 ) -> UserPreference:
     preference = await get_preferences(db, subject)
     if preference is None:
-        preference = UserPreference(subject=subject)
+        preference = UserPreference(subject=subject, theme=Theme.DARK)
         db.add(preference)
     preference.theme = theme
     preference.locale = locale

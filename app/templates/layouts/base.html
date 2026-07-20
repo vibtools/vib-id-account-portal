@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="{{ request.state.preferences.locale if request.state.preferences else 'en' }}" data-theme="{{ request.state.preferences.theme.value if request.state.preferences else 'system' }}" data-app-version="{{ app_version }}">
+<html lang="{{ request.state.preferences.locale if request.state.preferences else 'en' }}" data-theme="{{ request.state.preferences.theme.value if request.state.preferences else 'dark' }}" data-app-version="{{ app_version }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -33,7 +33,7 @@
     'activity': 'Activity',
     'preferences': 'Preferences'
   } %}
-  {% set current_theme = request.state.preferences.theme.value if request.state.preferences else 'system' %}
+  {% set current_theme = request.state.preferences.theme.value if request.state.preferences else 'dark' %}
   {% set user_name = claims.get('name') or claims.get('preferred_username') or 'Vib ID user' %}
   {% set user_email = claims.get('email') or 'Secure account' %}
 

@@ -202,7 +202,7 @@ def test_account_experience_profile_overview_and_contacts(client, login_user) ->
 
     profile_page = client.get("/profile")
     assert profile_page.status_code == 200
-    assert "Portable profile" in profile_page.text
+    assert "VibTools profile" in profile_page.text
 
     invalid_profile = client.post(
         "/profile",
@@ -273,3 +273,77 @@ def test_account_experience_profile_overview_and_contacts(client, login_user) ->
         data={"csrf_token": login.csrf_token},
         follow_redirects=False,
     ).status_code == 404
+
+
+def test_profile_page_hides_developer_api_preview(client, login_user) -> None:
+    login_user(subject="profile-ui-hotfix-user")
+    page = client.get("/profile")
+    assert page.status_code == 200
+    assert "Preview portable profile API" not in page.text
+    assert "/api/account/profile/portable" not in page.text
+    assert "VibTools profile" in page.text
+
+
+def test_applications_page_shows_catalog_without_history_and_maps_backend_aliases(
+    client, login_user
+) -> None:
+    login_user(subject="app-catalog-hotfix-user")
+
+    class BackendAliasKeycloak:
+        async def list_user_sessions(self, subject: str) -> list[dict[str, object]]:
+            del subject
+            return [
+                {
+                    "id": "central-ygit-dev-session",
+                    "clients": {
+                        "service-account-ygit-dev-backend": "YGIT Dev Backend",
+                        "vib-id-portal": "Vib ID",
+                    },
+                    "lastAccess": 1_771_432_800_000,
+                }
+            ]
+
+    client.app.state.keycloak = BackendAliasKeycloak()
+    page = client.get("/applications")
+    assert page.status_code == 200
+    assert "App catalog" in page.text
+    assert "YGIT" in page.text
+    assert "ygit.net" in page.text
+    assert "YGIT Dev" in page.text
+    assert "ygit.dev" in page.text
+    assert "Connected" in page.text
+
+    api = client.get("/api/applications")
+    assert api.status_code == 200
+    assert api.json()["applications"][0]["service_key"] == "ygit-dev"
+
+
+def test_account_data_export_txt_and_csv_do_not_expose_tokens(client, login_user) -> None:
+    login = login_user(subject="account-export-user", display_name="Export User")
+    client.post(
+        "/profile/social-links",
+        data={
+            "csrf_token": login.csrf_token,
+            "platform": "website",
+            "label": "Website",
+            "url": "https://vib.tools",
+            "visibility": "apps",
+        },
+        follow_redirects=False,
+    )
+
+    txt_response = client.get("/preferences/account-data.txt")
+    assert txt_response.status_code == 200
+    assert "attachment" in txt_response.headers["content-disposition"]
+    assert "Vib ID Account Data Export" in txt_response.text
+    assert "Export User" in txt_response.text
+    assert "https://vib.tools" in txt_response.text
+    assert "access_token" not in txt_response.text
+    assert "csrf" not in txt_response.text.lower()
+
+    csv_response = client.get("/preferences/account-data.csv")
+    assert csv_response.status_code == 200
+    assert "text/csv" in csv_response.headers["content-type"]
+    assert "section,field,value" in csv_response.text
+    assert "Export User" in csv_response.text
+    assert "server-only-access-token" not in csv_response.text

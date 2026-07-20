@@ -10,6 +10,7 @@ from app.account_security.service import (
     _central_client_ids,
     _client_candidates,
     _millis_to_datetime,
+    application_catalog_summaries,
     application_summaries,
     claims_from_auth,
     safe_central_sessions,
@@ -57,6 +58,8 @@ async def test_portable_profile_absent_subject_and_safe_central_fallbacks(client
 def test_central_client_helpers_cover_unknowns_and_seconds() -> None:
     assert _client_candidates("", None) == []
     assert "ygit" in _client_candidates("ygit-net")
+    assert "ygit" in _client_candidates("service-account-ygit-backend")
+    assert "ygit-dev" in _client_candidates("YGIT Dev Backend")
     assert _central_client_ids([{"clients": ["ygit-dev"], "lastAccess": 1000}]) == [
         ("ygit-dev", 1000)
     ]
@@ -87,6 +90,9 @@ def test_default_service_seed_and_duplicate_summary_skip(client, login_user) -> 
     import asyncio
 
     assert asyncio.run(run()) == ["ygit"]
+    catalog = application_catalog_summaries([])
+    assert [item.service_key for item in catalog] == ["ygit", "ygit-dev"]
+    assert all(item.status == "available" for item in catalog)
 
 
 def test_route_functions_direct_success_paths(client, login_user) -> None:
@@ -199,3 +205,158 @@ def test_account_experience_repository_direct_paths(client) -> None:
             return link_deleted, photo_deleted, missing_photo_deleted, avatar_key
 
     assert asyncio.run(run()) == (True, True, False, "direct-avatar.png")
+
+
+def test_account_data_export_helpers_cover_contacts_and_applications(client, login_user) -> None:
+    import asyncio
+    from datetime import UTC, datetime
+
+    from app.accounts.repository import add_contact, upsert_social_link
+    from app.accounts.schemas import ContactCreate, SocialLinkPayload
+    from app.preferences.routes import _account_data_export_rows, _download_headers, _value
+    from app.services_registry.repository import touch_connection
+
+    login = login_user(subject="export-helper-user", display_name="Export Helper")
+
+    class RequestStub:
+        app = client.app
+
+    async def run() -> list[tuple[str, str, str]]:
+        async with client.app.state.database.session_factory() as db:
+            auth = await client.app.state.session_service.resolve(db, login.raw_session_id)
+            assert auth is not None
+            await add_contact(
+                db,
+                subject=login.subject,
+                payload=ContactCreate(
+                    contact_type="email",
+                    label="Work",
+                    value="work@example.com",
+                    is_primary=True,
+                ),
+                contact_limit=10,
+            )
+            await upsert_social_link(
+                db,
+                subject=login.subject,
+                payload=SocialLinkPayload(
+                    platform="github",
+                    label="GitHub",
+                    url="https://github.com/vibtools",
+                    visibility="apps",
+                ),
+            )
+            await touch_connection(
+                db,
+                subject=login.subject,
+                service_key="ygit",
+                authenticated_at=datetime.now(UTC),
+            )
+            rows = await _account_data_export_rows(RequestStub(), db, auth)
+            await db.commit()
+            return rows
+
+    rows = asyncio.run(run())
+    assert ("Contacts", "Contact 1 value", "work@example.com") in rows
+    assert ("Social links", "Link 1 platform", "github") in rows
+    assert any(row[0] == "Applications" and row[2] == "YGIT" for row in rows)
+    assert _value(True) == "true"
+    assert _value(None) == ""
+    assert _value(datetime(2026, 7, 20, tzinfo=UTC)).startswith("2026-07-20")
+    headers = _download_headers("csv", datetime(2026, 7, 20, tzinfo=UTC))
+    assert "vib-id-account-data-20260720" in headers["Content-Disposition"]
+
+
+def test_account_security_summary_helpers_cover_fallback_branches(client, login_user) -> None:
+    import asyncio
+    from datetime import UTC, datetime, timedelta
+    from types import SimpleNamespace
+
+    from app.account_security.service import (
+        central_session_summaries,
+        local_session_summaries,
+        profile_summary,
+        security_status_from_central,
+    )
+    from app.auth.keycloak_management import CentralAccountStatus, KeycloakUnavailable
+
+    login = login_user(subject="summary-helper-user", display_name="Summary Helper")
+
+    async def run() -> tuple[str | None, bool, int, list[str]]:
+        async with client.app.state.database.session_factory() as db:
+            auth = await client.app.state.session_service.resolve(db, login.raw_session_id)
+            assert auth is not None
+            summary = await profile_summary(db, auth)
+            security = security_status_from_central(
+                CentralAccountStatus(None, None, None, None, False),
+                token_email_verified=True,
+            )
+            now = datetime.now(UTC)
+            sessions = local_session_summaries(
+                auth,
+                [
+                    SimpleNamespace(
+                        id=auth.model.id,
+                        device_label="Current browser",
+                        user_agent_summary="pytest",
+                        created_at=now,
+                        last_seen_at=now,
+                        idle_expires_at=now + timedelta(minutes=5),
+                        absolute_expires_at=now + timedelta(hours=1),
+                    )
+                ],
+            )
+            central = central_session_summaries(
+                [
+                    {"id": "", "clients": None},
+                    {
+                        "id": "central",
+                        "username": "user",
+                        "ipAddress": "127.0.0.1",
+                        "clients": {"client-id": "YGIT"},
+                        "start": "bad",
+                        "lastAccess": 1000,
+                    },
+                ]
+            )
+            return summary.email, bool(security.email_verified), len(sessions), central[0].clients
+
+    assert asyncio.run(run()) == ("raj@example.test", True, 1, ["YGIT"])
+
+    class DownKeycloak:
+        async def list_user_sessions(self, subject: str) -> list[dict[str, object]]:
+            del subject
+            raise KeycloakUnavailable("down")
+
+    from app.account_security.service import safe_central_sessions
+
+    assert asyncio.run(safe_central_sessions(DownKeycloak(), "subject")) == []
+
+
+def test_application_summary_merges_alias_registry_duplicates(client, login_user) -> None:
+    import asyncio
+    from datetime import UTC, datetime, timedelta
+
+    from app.services_registry.repository import touch_connection
+
+    login = login_user(subject="duplicate-app-summary-user")
+
+    async def run() -> list[tuple[str, str]]:
+        async with client.app.state.database.session_factory() as db:
+            first = datetime.now(UTC) - timedelta(minutes=5)
+            second = datetime.now(UTC)
+            del second
+            await touch_connection(
+                db, subject=login.subject, service_key="ygit-net", authenticated_at=first
+            )
+            apps = await application_summaries(
+                db,
+                login.subject,
+                central_sessions=[
+                    {"clients": {"ygit-backend": "YGIT Backend"}, "lastAccess": 1000}
+                ],
+            )
+            await db.commit()
+            return [(item.service_key, item.source) for item in apps]
+
+    assert asyncio.run(run()) == [("ygit-net", "registry_and_central_session")]

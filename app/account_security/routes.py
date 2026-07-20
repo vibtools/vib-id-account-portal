@@ -11,6 +11,7 @@ from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.account_security.service import (
+    application_catalog_summaries,
     application_summaries,
     central_session_summaries,
     claims_from_auth,
@@ -447,6 +448,7 @@ async def applications_page(  # pragma: no cover
 ) -> HTMLResponse:
     central_raw = await safe_central_sessions(request.app.state.keycloak, auth.subject)
     connections = await application_summaries(db, auth.subject, central_sessions=central_raw)
+    available_apps = application_catalog_summaries(connections)
     return templates.TemplateResponse(
         request,
         "applications/index.html",
@@ -454,6 +456,7 @@ async def applications_page(  # pragma: no cover
             request,
             auth=auth,
             active_nav="applications",
+            available_apps=available_apps,
             connections=connections,
         ),
     )

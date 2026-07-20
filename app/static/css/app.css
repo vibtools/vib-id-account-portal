@@ -2460,3 +2460,20 @@ td strong {
     align-items: flex-start;
   }
 }
+
+/* v1.3.1 Account Experience Hotfix */
+.app-catalog-grid {
+  margin-top: 0.75rem;
+}
+
+.app-catalog-card .service-title .status.neutral {
+  background: var(--primary-soft);
+  color: var(--secondary);
+}
+
+.data-export-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}

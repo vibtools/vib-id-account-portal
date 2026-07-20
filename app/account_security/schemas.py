@@ -52,3 +52,4 @@ class ApplicationSummary(BaseModel):
     source: str = "registry"
     first_connected_at: datetime | None = None
     last_authenticated_at: datetime | None = None
+    catalog_visible: bool = False
