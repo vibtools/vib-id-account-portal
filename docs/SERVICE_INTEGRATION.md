@@ -42,3 +42,22 @@ The backend must use the `sub` value obtained from its own validated user OIDC l
 ## Rejections
 
 Missing/forged/expired tokens, end-user tokens, unapproved clients, missing role, unknown service keys, oversized bodies, and rate-limit violations are rejected generically. No browser CORS access is enabled.
+
+## Portable Profile API for Connected Apps
+
+Connected applications can show the same Vib ID profile photo, display name, job title, organization, locale, timezone, and app-visible social links by calling the server-side portable profile endpoint after login.
+
+```http
+GET /internal/v1/account-profiles/{subject}
+Authorization: Bearer SERVICE_ACCOUNT_ACCESS_TOKEN
+```
+
+Rules:
+
+- Use the user `sub` claim from the OIDC login result.
+- Call this endpoint from the application backend only.
+- Do not call this endpoint from browser JavaScript.
+- Do not store service-account tokens in frontend code.
+- Cache profile responses briefly and refresh after login or profile update.
+
+This endpoint is separate from OIDC token claims so profile photo and profile details can update centrally without forcing every connected app to redesign its auth flow.

@@ -49,5 +49,6 @@ class ApplicationSummary(BaseModel):
     domain: str
     description: str
     status: str
-    first_connected_at: datetime
-    last_authenticated_at: datetime
+    source: str = "registry"
+    first_connected_at: datetime | None = None
+    last_authenticated_at: datetime | None = None

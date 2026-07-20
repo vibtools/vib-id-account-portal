@@ -13,6 +13,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from app import __version__
+from app.account_experience.routes import router as account_experience_router
 from app.account_security.routes import router as account_security_router
 from app.accounts.routes import router as accounts_router
 from app.activity.routes import router as activity_router
@@ -51,7 +52,11 @@ def create_app() -> FastAPI:
         SecurityHeadersMiddleware, production=settings.APP_ENV == "production"
     )
     application.add_middleware(RequestIDMiddleware)
-    application.add_middleware(RequestBodyLimitMiddleware, max_bytes=64 * 1024)
+    application.add_middleware(
+        RequestBodyLimitMiddleware,
+        max_bytes=64 * 1024,
+        path_max_bytes={"/profile/avatar": settings.REQUEST_BODY_MAX_BYTES},
+    )
     application.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
     application.include_router(health_router)
@@ -63,6 +68,7 @@ def create_app() -> FastAPI:
     application.include_router(activity_router)
     application.include_router(preferences_router)
     application.include_router(account_security_router)
+    application.include_router(account_experience_router)
     application.include_router(internal_router)
 
     @application.exception_handler(HTTPException)

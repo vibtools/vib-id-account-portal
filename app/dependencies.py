@@ -11,7 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.sessions import AuthenticatedSession
-from app.database.models.account import UserPreference
+from app.database.models.account import UserPreference, UserProfile
 from app.security.identifiers import privacy_ip, sanitize_user_agent
 
 
@@ -46,9 +46,13 @@ async def optional_auth(
     )
     request.state.auth = auth
     preference = None
+    profile = None
     if auth is not None:
         preference = (
             await db.execute(select(UserPreference).where(UserPreference.subject == auth.subject))
+        ).scalar_one_or_none()
+        profile = (
+            await db.execute(select(UserProfile).where(UserProfile.subject == auth.subject))
         ).scalar_one_or_none()
     request.state.preferences = (
         PreferenceSnapshot(
@@ -59,6 +63,7 @@ async def optional_auth(
         if preference is not None
         else None
     )
+    request.state.profile_avatar_key = profile.avatar_key if profile is not None else None
     return auth
 
 

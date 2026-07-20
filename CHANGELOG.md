@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.3.0 — 2026-07-20
+
+- Added Account Experience profile photo upload/remove with strict PNG/JPEG/WebP validation and size limits.
+- Added portable profile API for current user and internal connected-service consumers.
+- Added social/profile link management with safe URL validation and app/private visibility.
+- Improved Applications page to include YGIT/YGIT Dev from central Keycloak sessions when service touch data is not yet present.
+- Added additive database migration for profile photos and social links.
+- Preserved existing auth, security module, session, OIDC, email, and monitoring behavior.
+
 ## 1.2.2 — 2026-07-05
 
 - Added private operator-only operations monitoring script under `scripts/internal-ops/`.

@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 import pytest
 from starlette.requests import Request
 
+from app.account_security.service import application_summaries
 from app.accounts.service import profile_completeness
 from app.database.models.account import UserProfile
 from app.services_registry.service import validate_service_metadata
@@ -78,3 +79,29 @@ def test_base_context_has_no_raw_token_fields(client, login_user) -> None:
     assert context["claims"]["sub"] == "user-123"
     assert context["csrf_token"]
     assert "access_token" not in context
+
+
+
+def test_application_summaries_support_central_session_candidates(client, login_user) -> None:
+    login = login_user(subject="central-candidates-user")
+
+    async def run() -> list[str]:
+        async with client.app.state.database.session_factory() as db:
+            apps = await application_summaries(
+                db,
+                login.subject,
+                central_sessions=[
+                    {
+                        "clients": {"uuid-like": "YGIT", "ygit-dev": "YGIT Dev"},
+                        "lastAccess": 1000,
+                    },
+                    {"clients": ["ygit-net", "unknown-client"], "lastAccess": 1_771_432_800_000},
+                ],
+            )
+            return [item.service_key for item in apps]
+
+    import asyncio
+
+    keys = asyncio.run(run())
+    assert "ygit" in keys
+    assert "ygit-dev" in keys

@@ -13,6 +13,33 @@ from app.database.locks import acquire_advisory_xact_lock
 from app.database.models.enums import ConnectionStatus
 from app.database.models.service import ServiceRegistry, UserServiceConnection
 
+DEFAULT_SERVICES: dict[str, dict[str, object]] = {
+    "ygit": {
+        "display_name": "YGIT",
+        "domain": "ygit.net",
+        "description": "Open-source web platform connected to Vib ID.",
+        "icon_reference": "grid",
+        "active": True,
+        "sort_order": 10,
+    },
+    "ygit-net": {
+        "display_name": "YGIT",
+        "domain": "ygit.net",
+        "description": "Open-source web platform connected to Vib ID.",
+        "icon_reference": "grid",
+        "active": True,
+        "sort_order": 11,
+    },
+    "ygit-dev": {
+        "display_name": "YGIT Dev",
+        "domain": "ygit.dev",
+        "description": "Template marketplace and developer community connected to Vib ID.",
+        "icon_reference": "grid",
+        "active": True,
+        "sort_order": 20,
+    },
+}
+
 
 async def list_user_connections(db: AsyncSession, subject: str) -> list[UserServiceConnection]:
     result = await db.execute(
@@ -48,6 +75,8 @@ async def touch_connection(
             )
         )
     ).scalar_one_or_none()
+    if service is None:
+        service = await ensure_default_service(db, service_key=service_key)
     if service is None:
         raise LookupError("service is not registered or inactive")
     connection = (
@@ -114,3 +143,23 @@ async def list_services(db: AsyncSession) -> list[ServiceRegistry]:
             )
         ).scalars()
     )
+
+
+async def ensure_default_service(db: AsyncSession, *, service_key: str) -> ServiceRegistry | None:
+    definition = DEFAULT_SERVICES.get(service_key)
+    if definition is None:
+        return None
+    return await upsert_service(
+        db,
+        service_key=service_key,
+        display_name=str(definition["display_name"]),
+        domain=str(definition["domain"]),
+        description=str(definition["description"]),
+        icon_reference=str(definition["icon_reference"]),
+        active=bool(definition["active"]),
+        sort_order=int(definition["sort_order"]),
+    )
+
+
+def default_service_definition(service_key: str) -> dict[str, object] | None:
+    return DEFAULT_SERVICES.get(service_key)

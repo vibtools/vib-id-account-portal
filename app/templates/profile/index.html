@@ -1,11 +1,11 @@
 {% extends "layouts/base.html" %}
 {% block title %}Profile & Contacts · Vib ID{% endblock %}
 {% block content %}
-{% set heading = 'Profile & Contacts' %}{% set subheading = 'Manage extended profile details while your primary email remains secured by Vib ID.' %}{% set action_href = '/security/email' %}{% set action_label = 'Manage primary email' %}{% include "components/page_header.html" %}
+{% set heading = 'Profile & Contacts' %}{% set subheading = 'Manage your central Vib ID profile, avatar, social links, and contact methods for connected apps.' %}{% set action_href = '/api/account/profile/portable' %}{% set action_label = 'Preview portable profile API' %}{% include "components/page_header.html" %}
 {% include "components/alerts.html" %}
 <div class="two-column wide-left">
 <section class="panel">
-  <div class="panel-heading"><div><p class="eyebrow">Personal details</p><h2>Profile information</h2></div></div>
+  <div class="panel-heading"><div><p class="eyebrow">Personal details</p><h2>Profile information</h2></div><span class="status neutral">Portable profile</span></div>
   <form method="post" action="/profile" class="form-grid">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <input type="hidden" name="version" value="{{ profile.updated_at.isoformat() if profile else '' }}">
@@ -20,13 +20,35 @@
     <div class="form-actions full"><button class="button primary" type="submit">Save profile</button></div>
   </form>
 </section>
-<aside class="panel compact-panel">
-  <div class="panel-heading"><div><p class="eyebrow">Central identity</p><h2>Primary email</h2></div></div>
+<aside class="panel compact-panel profile-card-panel">
+  <div class="panel-heading"><div><p class="eyebrow">Central identity</p><h2>Portable profile</h2></div></div>
+  <div class="profile-avatar-preview">
+    {% if avatar_url %}<img src="{{ avatar_url }}" alt="{{ profile.display_name if profile else 'Profile' }} profile photo" loading="lazy">{% else %}<span class="avatar extra-large" aria-hidden="true">{{ (profile.display_name if profile else claims.get('name', 'V'))[:1]|upper }}</span>{% endif %}
+    <div><strong>{{ profile.display_name if profile else claims.get('name', 'Vib ID user') }}</strong><small>{{ claims.get('email') or 'Email secured by Vib ID' }}</small></div>
+  </div>
+  <form method="post" action="/profile/avatar" enctype="multipart/form-data" class="stacked-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label class="field"><span>Profile photo</span><input type="file" name="photo" accept="image/png,image/jpeg,image/webp" required></label>
+    <button class="button primary full-button" type="submit">Upload photo</button>
+  </form>
+  {% if avatar_url %}<form method="post" action="/profile/avatar/delete"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="button danger full-button" type="submit">Remove photo</button></form>{% endif %}
+  <p class="muted">Connected apps can fetch this avatar through the Vib ID portable profile API after user login.</p>
   <dl class="detail-list"><div><dt>Email</dt><dd>{{ claims.get('email') or 'Not available' }}</dd></div><div><dt>Status</dt><dd><span class="status {{ 'good' if claims.get('email_verified') else 'warning' }}">{{ 'Verified' if claims.get('email_verified') else 'Unverified' }}</span></dd></div></dl>
-  <p class="muted">Primary email changes and verification are handled securely by the Vib ID authentication service.</p>
-  <a class="button secondary full-button" href="/security">Open secure account settings</a>
 </aside>
 </div>
+<section class="panel">
+  <div class="panel-heading"><div><p class="eyebrow">Connected profile</p><h2>Social and portfolio links</h2></div><span class="status neutral">{{ social_links|length if social_links is defined else 0 }} saved</span></div>
+  {% if social_errors is defined and social_errors %}<div class="alert error" role="alert"><ul>{% for error in social_errors %}<li>{{ error }}</li>{% endfor %}</ul></div>{% endif %}
+  <form method="post" action="/profile/social-links" class="inline-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label class="field"><span>Platform</span><select name="platform"><option value="github">GitHub</option><option value="linkedin">LinkedIn</option><option value="x">X / Twitter</option><option value="facebook">Facebook</option><option value="youtube">YouTube</option><option value="website">Website</option><option value="portfolio">Portfolio</option></select></label>
+    <label class="field"><span>Label</span><input name="label" maxlength="40" required placeholder="GitHub"></label>
+    <label class="field grow"><span>URL</span><input name="url" maxlength="500" required placeholder="https://github.com/vibtools"></label>
+    <label class="field"><span>Visibility</span><select name="visibility"><option value="apps">Connected apps</option><option value="private">Private</option></select></label>
+    <button class="button primary" type="submit">Save link</button>
+  </form>
+  {% if social_links %}<div class="table-wrap"><table><thead><tr><th>Platform</th><th>Label</th><th>URL</th><th>Visibility</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>{% for link in social_links %}<tr><td>{{ link.platform|replace('-', ' ')|title }}</td><td>{{ link.label }}</td><td><a class="text-link" href="{{ link.url }}" rel="noopener noreferrer" target="_blank">{{ link.url }}</a></td><td><span class="status {{ 'good' if link.visibility == 'apps' else 'neutral' }}">{{ 'Connected apps' if link.visibility == 'apps' else 'Private' }}</span></td><td class="table-action"><form method="post" action="/profile/social-links/{{ link.id }}/delete"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="button danger small" type="submit">Remove</button></form></td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="empty-state small"><h3>No social links</h3><p>Add verified public profiles or portfolio links that connected apps can show with your Vib ID profile.</p></div>{% endif %}
+</section>
 <section class="panel">
   <div class="panel-heading"><div><p class="eyebrow">Additional contacts</p><h2>Contact methods</h2></div><span class="status neutral">{{ contacts|length }} saved</span></div>
   {% if contact_errors %}<div class="alert error" role="alert"><ul>{% for error in contact_errors %}<li>{{ error }}</li>{% endfor %}</ul></div>{% endif %}

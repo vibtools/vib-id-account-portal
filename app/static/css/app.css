@@ -2402,3 +2402,61 @@ td strong {
 .brand.brand-load-failed .brand-fallback {
   display: flex;
 }
+
+
+/* v1.3.0 Account Experience */
+.avatar.avatar-image {
+  object-fit: cover;
+  padding: 0;
+  background: var(--surface-subtle);
+}
+
+.avatar.extra-large {
+  width: 5rem;
+  height: 5rem;
+  font-size: 1.7rem;
+}
+
+.profile-card-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.profile-avatar-preview {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-subtle);
+}
+
+.profile-avatar-preview img {
+  width: 5rem;
+  height: 5rem;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 1px solid var(--border-strong);
+}
+
+.profile-avatar-preview strong,
+.profile-avatar-preview small {
+  display: block;
+}
+
+.stacked-form {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.inline-form .field.grow {
+  flex: 1 1 22rem;
+}
+
+@media (max-width: 720px) {
+  .profile-avatar-preview {
+    align-items: flex-start;
+  }
+}
