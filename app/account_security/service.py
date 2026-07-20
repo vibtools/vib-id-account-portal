@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,7 +18,7 @@ from app.account_security.schemas import (
 from app.accounts.repository import get_profile
 from app.auth.keycloak_management import CentralAccountStatus, KeycloakUnavailable
 from app.auth.sessions import AuthenticatedSession
-from app.services_registry.repository import list_user_connections
+from app.services_registry.repository import default_service_definition, list_user_connections
 
 
 def claims_from_auth(auth: AuthenticatedSession) -> dict[str, Any]:
@@ -96,20 +97,86 @@ def central_session_summaries(
     return [item for item in summaries if item.id]
 
 
-async def application_summaries(db: AsyncSession, subject: str) -> list[ApplicationSummary]:
+async def application_summaries(
+    db: AsyncSession,
+    subject: str,
+    *,
+    central_sessions: Iterable[dict[str, Any]] | None = None,
+) -> list[ApplicationSummary]:
     connections = await list_user_connections(db, subject)
-    return [
-        ApplicationSummary(
+    summaries: dict[str, ApplicationSummary] = {
+        str(connection.service.service_key): ApplicationSummary(
             service_key=str(connection.service.service_key),
             display_name=str(connection.service.display_name),
             domain=str(connection.service.domain),
             description=str(connection.service.description),
             status=str(connection.current_status.value),
+            source="registry",
             first_connected_at=connection.first_connected_at,
             last_authenticated_at=connection.last_authenticated_at,
         )
         for connection in connections
-    ]
+    }
+    for client_id, last_access in _central_client_ids(central_sessions or []):
+        if client_id in {"vib-id-portal", "account", "realm-management"}:
+            continue
+        if client_id in summaries:
+            continue
+        definition = default_service_definition(client_id)
+        if definition is None:
+            continue
+        summaries[client_id] = ApplicationSummary(
+            service_key=client_id,
+            display_name=str(definition["display_name"]),
+            domain=str(definition["domain"]),
+            description=str(definition["description"]),
+            status="active",
+            source="central_session",
+            first_connected_at=None,
+            last_authenticated_at=_millis_to_datetime(last_access),
+        )
+    return sorted(summaries.values(), key=lambda item: (item.domain, item.display_name))
+
+
+def _central_client_ids(raw_sessions: Iterable[dict[str, Any]]) -> list[tuple[str, int | None]]:
+    found: list[tuple[str, int | None]] = []
+    for item in raw_sessions:
+        last_access = _optional_int(item.get("lastAccess"))
+        clients = item.get("clients")
+        if isinstance(clients, dict):
+            for key, value in clients.items():
+                found.extend(
+                    (candidate, last_access)
+                    for candidate in _client_candidates(key, value)
+                )
+        elif isinstance(clients, list):
+            for value in clients:
+                found.extend((candidate, last_access) for candidate in _client_candidates(value))
+    return found
+
+
+def _client_candidates(*values: object) -> list[str]:
+    candidates: list[str] = []
+    for value in values:
+        if not value:
+            continue
+        raw = str(value).strip()
+        if not raw:
+            continue
+        lowered = raw.lower().replace(" ", "-")
+        candidates.append(lowered)
+        if lowered == "ygit-net":
+            candidates.append("ygit")
+    return candidates
+
+
+def _millis_to_datetime(value: int | None) -> datetime | None:
+    if value is None:
+        return None
+    # Keycloak user-session timestamps are millisecond epoch values.
+    if value > 10_000_000_000:
+        return datetime.fromtimestamp(value / 1000, UTC)
+    return datetime.fromtimestamp(value, UTC)
 
 
 async def safe_central_sessions(keycloak: Any, subject: str) -> list[dict[str, Any]]:

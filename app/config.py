@@ -71,6 +71,10 @@ class Settings(BaseSettings):
     DATABASE_POOL_TIMEOUT: int = Field(default=10, ge=1, le=60)
     PROFILE_CONTACT_LIMIT: int = Field(default=10, ge=1, le=25)
     RATE_LIMIT_ENABLED: bool = True
+    REQUEST_BODY_MAX_BYTES: int = Field(default=3 * 1024 * 1024, ge=64 * 1024, le=8 * 1024 * 1024)
+    PROFILE_AVATAR_MAX_BYTES: int = Field(default=1 * 1024 * 1024, ge=16 * 1024, le=2 * 1024 * 1024)
+    PROFILE_AVATAR_ALLOWED_TYPES: str = "image/png,image/jpeg,image/webp"
+
 
     @field_validator(
         "APP_SECRET_KEY",
@@ -146,6 +150,14 @@ class Settings(BaseSettings):
         if account.hostname != issuer.hostname:
             raise ValueError("Keycloak account URL host must match issuer host")
         return self
+
+    @property
+    def allowed_profile_avatar_types(self) -> set[str]:
+        return {
+            item.strip().lower()
+            for item in self.PROFILE_AVATAR_ALLOWED_TYPES.split(",")
+            if item.strip()
+        }
 
     @property
     def trusted_hosts(self) -> list[str]:

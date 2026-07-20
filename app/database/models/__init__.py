@@ -1,6 +1,12 @@
 """Database model exports."""
 
-from app.database.models.account import UserContact, UserPreference, UserProfile
+from app.database.models.account import (
+    UserContact,
+    UserPreference,
+    UserProfile,
+    UserProfilePhoto,
+    UserSocialLink,
+)
 from app.database.models.security import (
     LogoutTokenReplay,
     OIDCTransaction,
@@ -20,5 +26,7 @@ __all__ = [
     "UserContact",
     "UserPreference",
     "UserProfile",
+    "UserProfilePhoto",
     "UserServiceConnection",
+    "UserSocialLink",
 ]

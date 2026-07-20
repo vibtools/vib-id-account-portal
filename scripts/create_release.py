@@ -7,7 +7,7 @@ import hashlib
 import zipfile
 from pathlib import Path
 
-ARCHIVE_NAME = "Vib_ID_Account_Portal_v1.2.2_OPERATIONS_UI_PATCH.zip"
+ARCHIVE_NAME = "Vib_ID_Account_Portal_v1.3.0_ACCOUNT_EXPERIENCE.zip"
 ROOT_PREFIX = "vib-id-account-portal"
 EXCLUDED_DIRS = {
     ".git",

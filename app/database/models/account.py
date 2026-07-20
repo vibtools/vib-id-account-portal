@@ -9,6 +9,8 @@ from sqlalchemy import (
     CheckConstraint,
     Enum,
     Index,
+    Integer,
+    LargeBinary,
     String,
     UniqueConstraint,
     text,
@@ -83,3 +85,42 @@ class UserPreference(TimestampMixin, Base):
         Boolean, nullable=False, default=True
     )
     product_announcements: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+
+
+class UserSocialLink(TimestampMixin, Base):
+    __tablename__ = "user_social_links"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    subject: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    platform: Mapped[str] = mapped_column(String(32), nullable=False)
+    label: Mapped[str] = mapped_column(String(40), nullable=False)
+    url: Mapped[str] = mapped_column(String(500), nullable=False)
+    normalized_url: Mapped[str] = mapped_column(String(500), nullable=False)
+    visibility: Mapped[str] = mapped_column(String(16), nullable=False, default="apps")
+
+    __table_args__ = (
+        UniqueConstraint("subject", "platform", name="uq_social_link_subject_platform"),
+        CheckConstraint("platform = lower(platform)", name="ck_social_platform_lowercase"),
+        CheckConstraint("visibility IN ('apps', 'private')", name="ck_social_visibility"),
+    )
+
+
+class UserProfilePhoto(TimestampMixin, Base):
+    __tablename__ = "user_profile_photos"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    subject: Mapped[str] = mapped_column(String(255), nullable=False, unique=True, index=True)
+    avatar_key: Mapped[str] = mapped_column(String(96), nullable=False, unique=True, index=True)
+    mime_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
+    sha256_hash: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    image_bytes: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+
+    __table_args__ = (
+        CheckConstraint("size_bytes > 0", name="ck_profile_photo_size_positive"),
+        CheckConstraint(
+            "mime_type IN ('image/png', 'image/jpeg', 'image/webp')",
+            name="ck_profile_photo_mime",
+        ),
+    )

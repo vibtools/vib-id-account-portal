@@ -9,10 +9,16 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.engine import CursorResult
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.accounts.schemas import ContactCreate, ProfileUpdate
+from app.accounts.schemas import ContactCreate, ProfileUpdate, SocialLinkPayload
 from app.database.base import as_utc
 from app.database.locks import acquire_advisory_xact_lock
-from app.database.models.account import UserContact, UserPreference, UserProfile
+from app.database.models.account import (
+    UserContact,
+    UserPreference,
+    UserProfile,
+    UserProfilePhoto,
+    UserSocialLink,
+)
 from app.database.models.enums import Theme
 
 
@@ -175,3 +181,90 @@ async def update_preferences(
     preference.security_email_notifications = security_notifications
     await db.flush()
     return preference
+
+
+
+async def list_social_links(
+    db: AsyncSession, subject: str, *, include_private: bool = True
+) -> list[UserSocialLink]:
+    statement = select(UserSocialLink).where(UserSocialLink.subject == subject)
+    if not include_private:
+        statement = statement.where(UserSocialLink.visibility == "apps")
+    result = await db.execute(statement.order_by(UserSocialLink.platform))
+    return list(result.scalars())
+
+
+async def upsert_social_link(
+    db: AsyncSession, *, subject: str, payload: SocialLinkPayload
+) -> UserSocialLink:
+    link = (
+        await db.execute(
+            select(UserSocialLink).where(
+                UserSocialLink.subject == subject, UserSocialLink.platform == payload.platform
+            )
+        )
+    ).scalar_one_or_none()
+    if link is None:
+        link = UserSocialLink(subject=subject, platform=payload.platform)
+        db.add(link)
+    link.label = payload.label
+    link.url = payload.url
+    link.normalized_url = payload.normalized()
+    link.visibility = payload.visibility
+    await db.flush()
+    return link
+
+
+async def delete_social_link(db: AsyncSession, *, subject: str, link_id: object) -> bool:
+    result = await db.execute(
+        delete(UserSocialLink).where(
+            UserSocialLink.id == link_id, UserSocialLink.subject == subject
+        )
+    )
+    return bool(cast(CursorResult[Any], result).rowcount)
+
+
+async def get_profile_photo(db: AsyncSession, *, subject: str) -> UserProfilePhoto | None:
+    return (
+        await db.execute(select(UserProfilePhoto).where(UserProfilePhoto.subject == subject))
+    ).scalar_one_or_none()
+
+
+async def get_profile_photo_by_key(db: AsyncSession, *, avatar_key: str) -> UserProfilePhoto | None:
+    return (
+        await db.execute(select(UserProfilePhoto).where(UserProfilePhoto.avatar_key == avatar_key))
+    ).scalar_one_or_none()
+
+
+async def upsert_profile_photo(
+    db: AsyncSession,
+    *,
+    subject: str,
+    avatar_key: str,
+    mime_type: str,
+    size_bytes: int,
+    sha256_hash: str,
+    image_bytes: bytes,
+) -> UserProfilePhoto:
+    photo = await get_profile_photo(db, subject=subject)
+    if photo is None:
+        photo = UserProfilePhoto(subject=subject, avatar_key=avatar_key)
+        db.add(photo)
+    photo.avatar_key = avatar_key
+    photo.mime_type = mime_type
+    photo.size_bytes = size_bytes
+    photo.sha256_hash = sha256_hash
+    photo.image_bytes = image_bytes
+    profile = await get_profile(db, subject)
+    if profile is not None:
+        profile.avatar_key = avatar_key
+    await db.flush()
+    return photo
+
+
+async def delete_profile_photo(db: AsyncSession, *, subject: str) -> bool:
+    profile = await get_profile(db, subject)
+    if profile is not None:
+        profile.avatar_key = None
+    result = await db.execute(delete(UserProfilePhoto).where(UserProfilePhoto.subject == subject))
+    return bool(cast(CursorResult[Any], result).rowcount)

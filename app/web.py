@@ -58,5 +58,9 @@ def base_context(
         "keycloak_account_url": settings.KEYCLOAK_ACCOUNT_URL,
         "request_id": getattr(request.state, "request_id", ""),
     }
+    avatar_key = getattr(request.state, "profile_avatar_key", None)
+    if avatar_key:
+        base_url = settings.APP_BASE_URL.rstrip("/")
+        context["avatar_url"] = f"{base_url}/media/profile-avatars/{avatar_key}"
     context.update(values)
     return context

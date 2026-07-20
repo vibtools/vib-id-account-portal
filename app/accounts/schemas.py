@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 import unicodedata
 from datetime import UTC, datetime, timedelta
+from urllib.parse import urlparse, urlunparse
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import phonenumbers
@@ -16,6 +17,16 @@ from app.database.models.enums import ContactType
 LANGUAGE_PATTERN = re.compile(r"^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$")
 SAFE_TEXT_PATTERN = re.compile(r"^[^\x00-\x1f\x7f]*$")
 SERVICE_KEY_PATTERN = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$")
+SOCIAL_PLATFORM_PATTERN = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$")
+ALLOWED_SOCIAL_PLATFORMS = {
+    "github",
+    "linkedin",
+    "x",
+    "facebook",
+    "youtube",
+    "website",
+    "portfolio",
+}
 
 
 def clean_text(value: str, *, max_length: int, required: bool = False) -> str | None:
@@ -168,3 +179,53 @@ class ServiceTouchPayload(BaseModel):
         if normalized > datetime.now(UTC) + timedelta(minutes=5):
             raise ValueError("authenticated_at cannot be more than five minutes in the future")
         return normalized
+
+
+class SocialLinkPayload(BaseModel):
+    platform: str = Field(min_length=1, max_length=32)
+    label: str = Field(min_length=1, max_length=40)
+    url: str = Field(min_length=8, max_length=500)
+    visibility: str = Field(default="apps", max_length=16)
+
+    @field_validator("platform")
+    @classmethod
+    def platform_is_valid(cls, value: str) -> str:
+        platform = value.strip().lower()
+        if (
+            platform not in ALLOWED_SOCIAL_PLATFORMS
+            or not SOCIAL_PLATFORM_PATTERN.fullmatch(platform)
+        ):
+            raise ValueError("Social platform is not supported")
+        return platform
+
+    @field_validator("label")
+    @classmethod
+    def label_is_safe(cls, value: str) -> str:
+        return str(clean_text(value, max_length=40, required=True))
+
+    @field_validator("visibility")
+    @classmethod
+    def visibility_is_valid(cls, value: str) -> str:
+        visibility = value.strip().lower() or "apps"
+        if visibility not in {"apps", "private"}:
+            raise ValueError("Visibility must be apps or private")
+        return visibility
+
+    @field_validator("url")
+    @classmethod
+    def url_is_safe(cls, value: str) -> str:
+        normalized = unicodedata.normalize("NFC", value).strip()
+        parsed = urlparse(normalized)
+        if parsed.scheme not in {"https", "http"}:
+            raise ValueError("URL must use https or http")
+        if parsed.scheme == "http" and parsed.hostname not in {"localhost", "127.0.0.1"}:
+            raise ValueError("Public social URLs must use https")
+        if not parsed.hostname or parsed.username or parsed.password:
+            raise ValueError("URL host is invalid")
+        if any(ord(char) < 32 for char in normalized):
+            raise ValueError("URL contains unsafe characters")
+        path = parsed.path or "/"
+        return urlunparse((parsed.scheme, parsed.netloc.lower(), path, "", parsed.query, ""))
+
+    def normalized(self) -> str:
+        return self.url.casefold()

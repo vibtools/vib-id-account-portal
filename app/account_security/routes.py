@@ -24,7 +24,6 @@ from app.auth.sessions import AuthenticatedSession
 from app.dependencies import get_db, request_security_context, require_auth, validate_csrf
 from app.middleware.rate_limit import RateLimit
 from app.security.audit import record_activity
-from app.services_registry.repository import list_user_connections
 from app.web import base_context, templates
 
 router = APIRouter()
@@ -446,7 +445,8 @@ async def applications_page(  # pragma: no cover
     db: AsyncSession = Depends(get_db),
     auth: AuthenticatedSession = Depends(require_auth),
 ) -> HTMLResponse:
-    connections = await list_user_connections(db, auth.subject)
+    central_raw = await safe_central_sessions(request.app.state.keycloak, auth.subject)
+    connections = await application_summaries(db, auth.subject, central_sessions=central_raw)
     return templates.TemplateResponse(
         request,
         "applications/index.html",
@@ -508,10 +508,12 @@ async def api_security_sessions(  # pragma: no cover
 
 @router.get("/api/applications")
 async def api_applications(  # pragma: no cover
+    request: Request,
     db: AsyncSession = Depends(get_db),
     auth: AuthenticatedSession = Depends(require_auth),
 ) -> dict[str, Any]:
-    applications = await application_summaries(db, auth.subject)
+    central_raw = await safe_central_sessions(request.app.state.keycloak, auth.subject)
+    applications = await application_summaries(db, auth.subject, central_sessions=central_raw)
     return {"applications": [item.model_dump(mode="json") for item in applications]}
 
 
